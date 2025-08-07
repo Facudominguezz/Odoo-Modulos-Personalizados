@@ -1,0 +1,158 @@
+<odoo>
+    <data>
+        <!-- ============================================================ -->
+        <!-- VISTAS DEL MODELO impresoras                                -->
+        <!-- ============================================================ -->
+        
+        <!-- Vista de formulario para crear/editar configuraciones de impresión -->
+        <record id="view_impresoras_form" model="ir.ui.view">
+            <field name="name">impresoras.form</field>
+            <field name="model">impresoras</field>
+            <field name="arch" type="xml">
+                <form string="Impresoras">
+                    <!-- Barra de botones en el header -->
+                    <header>
+                        <button name="consultar_impresoras_api" 
+                                type="object" 
+                                string="Refrescar Lista API"
+                                class="btn-primary"
+                                help="Actualizar lista de impresoras desde la API"/>
+                    </header>
+                    
+                    <sheet>
+                        <!-- Grupo de información básica -->
+                        <group name="info_basica" string="Configuración Básica">
+                            <group>
+                                <!-- Campo automático obtenido del middleware -->
+                                <field name="name" readonly="1" force_save="1"/>
+                                <!-- Marcar como impresora predeterminada con actualización automática -->
+                                <field name="es_predeterminada" 
+                                       widget="boolean_button"
+                                       options="{'terminology': 'active'}"
+                                       help="Solo puede haber una impresora predeterminada. Al marcar esta, se desmarcará automáticamente la anterior."/>
+                            </group>
+                            <group>
+                                <!-- Dirección IP obtenida automáticamente del middleware -->
+                                <field name="direccion_ip" readonly="1" force_save="1"/>
+                                <!-- Puerto obtenido automáticamente del middleware -->
+                                <field name="puerto" readonly="1" force_save="1"/>
+                            </group>
+                        </group>
+
+                        <!-- Grupo de configuración de Impresora -->
+                        <group name="obtener_impresoras" string="Configuración de Impresora">
+                            <group>
+                                <!-- Lista de impresoras disponibles desde la API -->
+                                <field name="impresora_seleccionada"/>
+                            </group>
+                        </group>
+                        
+                        <!-- Información adicional -->
+                        <group name="info_adicional" string="Información">
+                            <div class="alert alert-info" role="alert">
+                                <strong>Instrucciones de uso:</strong>
+                                <ul>
+                                    <li>Configure la URL de la API en el campo correspondiente</li>
+                                    <li>Use "Refrescar Lista API" para obtener las impresoras disponibles</li>
+                                    <li>Seleccione una impresora de la lista obtenida de la API</li>
+                                    <li>Los datos de nombre, IP y puerto se obtienen automáticamente del middleware</li>
+                                    <li>Al marcar como "Predeterminada" y guardar se envía automáticamente la configuración a la API</li>
+                                </ul>
+                            </div>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Vista de lista para mostrar todas las configuraciones de impresión -->
+        <record id="view_impresoras_tree" model="ir.ui.view">
+            <field name="name">impresoras.list</field>
+            <field name="model">impresoras</field>
+            <field name="arch" type="xml">
+                <list string="Impresoras">
+                    <!-- Campos que se mostrarán en la vista de lista -->
+                    <field name="name"/>
+                    <field name="direccion_ip"/>
+                    <field name="puerto"/>
+                    <!-- Indicador visual de impresora predeterminada -->
+                    <field name="es_predeterminada" widget="boolean_toggle" readonly="1"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Vista de búsqueda con filtros -->
+        <record id="view_impresoras_search" model="ir.ui.view">
+            <field name="name">impresoras.search</field>
+            <field name="model">impresoras</field>
+            <field name="arch" type="xml">
+                <search string="Buscar Impresoras">
+                    <!-- Campo de búsqueda por nombre -->
+                    <field name="name" string="Nombre"/>
+                    <field name="impresora_seleccionada" string="Impresora"/>
+                    <field name="direccion_ip" string="IP"/>
+                    
+                    <!-- Filtros predefinidos -->
+                    <filter name="predeterminada" 
+                            string="Predeterminada" 
+                            domain="[('es_predeterminada', '=', True)]"/>
+                    
+                    <!-- Agrupaciones -->
+                    <group expand="0" string="Agrupar por">
+                        <filter name="group_impresora" 
+                                string="Impresora" 
+                                context="{'group_by': 'impresora_seleccionada'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- ============================================================ -->
+        <!-- ACCIONES (ACTIONS)                                          -->
+        <!-- ============================================================ -->
+        
+        <!-- Acción principal que define cómo se comporta el módulo -->
+        <record id="action_impresoras" model="ir.actions.act_window">
+            <!-- Nombre que aparecerá en la ventana -->
+            <field name="name">Impresoras</field>
+            <!-- Modelo de datos que maneja esta acción -->
+            <field name="res_model">impresoras</field>
+            <!-- Modos de vista disponibles: lista primero, luego formulario -->
+            <field name="view_mode">list,form</field>
+            <!-- Vista por defecto que se abrirá (la lista) -->
+            <field name="view_id" ref="view_impresoras_tree"/>
+            <!-- Vista de búsqueda asociada -->
+            <field name="search_view_id" ref="view_impresoras_search"/>
+            <!-- Contexto con filtros por defecto -->
+            <field name="context">{'search_default_predeterminada': 1}</field>
+            <!-- Texto de ayuda cuando no hay registros -->
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    ¡Crea tu primera configuración de impresora!
+                </p>
+                <p>
+                    Configure sus impresoras conectándose a la API para obtener 
+                    la lista de dispositivos disponibles y establecer cuál será 
+                    la impresora predeterminada del sistema.
+                </p>
+            </field>
+        </record>
+
+        <!-- ============================================================ -->
+        <!-- MENÚS DE NAVEGACIÓN                                         -->
+        <!-- ============================================================ -->
+        
+        <!-- Menú principal que aparecerá en la barra de navegación superior -->
+        <menuitem id="menu_impresoras_main"
+                  name="Impresión Personalizada"
+                  sequence="10"/>
+
+        <!-- Submenú que ejecuta la acción para mostrar las configuraciones -->
+        <menuitem id="menu_impresoras"
+                  name="Configuraciones"
+                  action="action_impresoras"
+                  parent="menu_impresoras_main"
+                  sequence="10"/>
+
+    </data>
+</odoo>
