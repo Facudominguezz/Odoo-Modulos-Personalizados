@@ -6,9 +6,7 @@ from odoo.http import request
 import requests
 import logging
 
-
-
-
+from odoo.addons.relex_api.constants import API_BASE_URL, ENDPOINTS, build_url
 
 # Logger para debug y errores
 _logger = logging.getLogger(__name__)

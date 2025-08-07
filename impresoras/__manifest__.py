@@ -27,7 +27,8 @@
 
     # Dependencias del módulo
     'depends': [
-        'base',  # Módulo base de Odoo (siempre requerido)
+        'base', # Módulo base de Odoo (siempre requerido)
+        'relex_api',
     ],
 
     # Dependencias externas de Python (paquetes que se deben instalar)
