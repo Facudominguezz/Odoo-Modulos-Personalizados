@@ -1,0 +1,23 @@
+<!--
+    Vista de configuración para el módulo Relex API
+
+    Extiende la vista de configuración base (res.config.settings) para agregar
+    las configuraciones específicas del módulo de API de impresoras Relex.
+-->
+<odoo>
+    <!-- Vista heredada de configuración para agregar campos de API de impresoras -->
+    <record id="view_relex_api_config_settings" model="ir.ui.view">
+        <field name="name">relex.api.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Inserta dentro del bloque Integrations -->
+            <xpath expr="//block[@name='integration']" position="inside">
+                <setting id="relex_api_base_url" string="Impresoras - API Base URL"
+                         help="URL base del middleware de impresoras">
+                    <field name="api_base_url" placeholder="http://10.0.0.1:5000"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>
