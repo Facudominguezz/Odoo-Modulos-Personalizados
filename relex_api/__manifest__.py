@@ -1,41 +1,38 @@
-# relex_api/__manifest__.py
+# -*- coding: utf-8 -*-
 {
     # --- Metadatos básicos ----------------------------------------------------
-    "name": "Relex API Core",
-    "summary": "Constantes y mixins reutilizables para la API de impresoras",
+    "name": "Relex API Configuration",
+    "summary": "Configuración centralizada para APIs de Relex",
     "description": """
-Relex API Core
-==============
-Módulo técnico que centraliza:
+Módulo para gestionar configuraciones centralizadas de APIs.
 
-* `API_BASE_URL`
-* `ENDPOINTS`
-* `build_url()`
-* Mixins/ayudas relacionadas
-
-No añade modelos funcionales ni vistas. Los demás addons de Relex deben
-declararlo en `depends` para reutilizar estas utilidades.
+Características:
+* Configuración de URL base de API desde interfaz de usuario
+* Gestión centralizada de endpoints
+* Configuraciones por empresa
 """,
-    "author": "Relex · Facundo Diaz Dominguez",
+    "author": "Relex",
     "website": "https://www.relex.com",
     "maintainer": "Relex",
 
     # --- Información Odoo ----------------------------------------------------
     "version": "18.0.1.0.0",          # <major>.<odoo_ver>.<patch>
     "license": "LGPL-3",
-    "category": "Technical/Tools",
+    "category": "Technical",
 
     # --- Dependencias --------------------------------------------------------
     # 'base' es suficiente; los demás módulos lo heredarán.
-    "depends": ["base"],
+    'depends': ['base', 'base_setup'],
 
     # Si en los mixins usas 'requests', decláralo aquí para que Odoo lo avise
     "external_dependencies": {
         "python": ["requests"],
     },
 
-    # --- Archivos de datos XML/CSV (no hay) ----------------------------------
-    "data": [],
+    # --- Archivos de datos XML/CSV -------------------------------------------
+    "data": [
+        "views/res_config_settings_views.xml",
+    ],
 
     # --- Configuración -------------------------------------------------------
     "installable": True,
