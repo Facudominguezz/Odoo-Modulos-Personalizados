@@ -6,7 +6,7 @@ from odoo.http import request
 import requests
 import logging
 
-from odoo.addons.relex_api.constants import API_BASE_URL, ENDPOINTS, build_url
+from odoo.addons.relex_api.constants import build_url
 
 # Logger para debug y errores
 _logger = logging.getLogger(__name__)
@@ -37,11 +37,11 @@ class ImpresionPersonalizadaController(http.Controller):
         """
         try:
             # Usar las constantes para construir la URL
-            return build_url(endpoint_key)
+            return build_url(request.env,endpoint_key)
         except KeyError:
             _logger.error(f"Endpoint '{endpoint_key}' no encontrado en constantes")
             # Fallback a URL de impresoras por defecto
-            return build_url('printers')
+            return build_url(request.env,'printers')
         except Exception as e:
             _logger.error(f"Error al construir URL de API: {e}")
             # Último recurso: usar API_BASE_URL directamente
@@ -192,7 +192,8 @@ class ImpresionPersonalizadaController(http.Controller):
             impresoras_data = self.consultar_impresoras_api_externa()
 
             if not impresoras_data:
-                return [('sin_conexion', f'Sin conexión a API - Verificar {API_BASE_URL}')]
+                url_cfg = request.env['ir.config_parameter'].sudo().get_param('relex_api.api_base_url')
+                return [('sin_conexion', f'Sin conexión a API - Verificar {url_cfg or "URL no configurada"}')]
 
             # Convertir a formato Selection de Odoo
             impresoras_list = []
