@@ -43,6 +43,7 @@
 
         # Archivos de vistas (interfaz de usuario)
         'views/templates.xml',  # Vistas principales del módulo
+        'views/impresoras_menus.xml',  # Vistas Menu de navegación
     ],
 
     # Configuraciones adicionales
