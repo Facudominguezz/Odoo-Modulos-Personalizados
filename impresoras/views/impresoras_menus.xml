@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ============================================================ -->
+<!-- MENÚS DE NAVEGACIÓN                                         -->
+<!-- ============================================================ -->
+
+<odoo>
+  <data>
+    <!-- Menú principal -->
+    <menuitem id="menu_impresoras_main"
+              name="Impresoras"
+              sequence="10"/>
+
+    <!-- Submenú configuraciones -->
+    <menuitem id="menu_impresoras"
+              name="Configuraciones"
+              action="action_impresoras"
+              parent="menu_impresoras_main"
+              sequence="10"/>
+  </data>
+</odoo>
