@@ -2,6 +2,7 @@
 
 # Importaciones necesarias de Odoo
 from odoo import models, fields, api
+from odoo.exceptions import UserError
 import logging
 
 # Logger para debug y errores
@@ -403,3 +404,33 @@ class Impresoras(models.Model):
                     'type': 'danger',
                 }
             }
+
+    def _generate_test_pdf_bytes(self):
+        """Genera un PDF muy simple en bytes para pruebas de impresión."""
+        pdf = b"""%PDF-1.4\n1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj\n2 0 obj <</Type /Pages /Kids [3 0 R] /Count 1>> endobj\n3 0 obj <</Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources <</Font <</F1 5 0 R>>>>>> endobj\n4 0 obj <</Length 64>> stream\nBT /F1 24 Tf 100 760 Td (Pagina de prueba de impresion) Tj ET\nendstream endobj\n5 0 obj <</Type /Font /Subtype /Type1 /BaseFont /Helvetica>> endobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000061 00000 n \n0000000116 00000 n \n0000000277 00000 n \n0000000374 00000 n \ntrailer <</Size 6 /Root 1 0 R>>\nstartxref\n441\n%%EOF\n"""
+        return pdf
+
+    def imprimir_pagina_prueba(self):
+        """Acción del botón: genera y envía un PDF de prueba a través del controlador sólo si es la impresora predeterminada."""
+        self.ensure_one()
+        if not self.id:
+            raise UserError("Guarde el registro antes de imprimir la página de prueba.")
+        # Validar que esta sea la impresora predeterminada vigente
+        predeterminada = self.obtener_impresora_predeterminada()
+        if not predeterminada or predeterminada.id != self.id:
+            raise UserError("Solo la impresora marcada como predeterminada puede imprimir la página de prueba.")
+        controller = self._get_controller()
+        pdf_content = self._generate_test_pdf_bytes()
+        exito, mensaje = controller.enviar_pdf_prueba(pdf_content, 'test_page.pdf')
+        if not exito:
+            raise UserError(mensaje)
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Impresión',
+                'message': mensaje,
+                'type': 'success',
+                'sticky': False,
+            }
+        }

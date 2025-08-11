@@ -44,6 +44,7 @@ def build_url(env, key):
         'root': '/',                           # Endpoint raíz de la API
         'printers': '/printers',               # Listado de impresoras
         'default_printer': '/impresora/predeterminada',  # Impresora por defecto
+        'print_pdf': '/print-pdf',             # Envío de PDF para impresión
     }
 
     # Construir y retornar la URL completa usando urljoin para manejo seguro de rutas
