@@ -6,7 +6,7 @@ from odoo.http import request
 import requests
 import logging
 
-from odoo.addons.relex_api.constants import build_url
+from odoo.addons.relex_api.constants import build_url, get_api_base_url
 
 # Logger para debug y errores
 _logger = logging.getLogger(__name__)
@@ -36,16 +36,13 @@ class ImpresionPersonalizadaController(http.Controller):
             str: URL completa del endpoint
         """
         try:
-            # Usar las constantes para construir la URL
             return build_url(request.env,endpoint_key)
         except KeyError:
-            _logger.error(f"Endpoint '{endpoint_key}' no encontrado en constantes")
-            # Fallback a URL de impresoras por defecto
+            _logger.error(f"Endpoint '{endpoint_key}' no encontrado en constantes, usando 'printers'")
             return build_url(request.env,'printers')
         except Exception as e:
-            _logger.error(f"Error al construir URL de API: {e}")
-            # Último recurso: usar API_BASE_URL directamente
-            return f"{API_BASE_URL}/printers"
+            _logger.error(f"Error al construir URL de API para {endpoint_key}: {e}")
+            return build_url(request.env,'printers')
 
     def _consultar_api_externa(self, endpoint_key='printers', metodo='GET', datos=None):
         """
@@ -281,3 +278,39 @@ class ImpresionPersonalizadaController(http.Controller):
         except Exception as e:
             _logger.error(f"Error inesperado al enviar impresora predeterminada: {e}")
             return False
+
+    def enviar_pdf_prueba(self, pdf_bytes, filename='test_page.pdf'):
+        """Envía un PDF de prueba al endpoint de impresión definido en constants (print_pdf).
+        Centraliza la llamada externa (multipart) para mantener la arquitectura: el modelo NO llama a requests directamente.
+        Args:
+            pdf_bytes (bytes): Contenido del PDF
+            filename (str): Nombre del archivo a enviar
+        Returns:
+            tuple(bool,str): (exito, mensaje)
+        """
+        
+        try:
+            api_base = get_api_base_url(request.env)
+            if not api_base:
+                return False, 'API Base URL no configurada (relex_api.api_base_url)'
+            try:
+                endpoint_url = build_url(request.env, 'print_pdf')
+            except Exception as e:
+                return False, f'No se pudo construir URL: {e}'
+            _logger.info('Enviando PDF de prueba a %s', endpoint_url)
+            try:
+                resp = requests.post(
+                    endpoint_url,
+                    files={'file': (filename, pdf_bytes, 'application/pdf')},
+                    timeout=30,
+                )
+            except Exception as e:
+                _logger.error('Error de conexión al enviar PDF prueba: %s', e)
+                return False, f'Error de conexión: {e}'
+            if resp.status_code >= 400:
+                _logger.error('Fallo impresión (%s): %s', resp.status_code, resp.text[:200])
+                return False, f'Servicio respondió {resp.status_code}: {resp.text[:200]}'
+            return True, 'Página de prueba enviada correctamente'
+        except Exception as e:
+            _logger.error('Error inesperado enviando PDF prueba: %s', e)
+            return False, f'Error inesperado: {e}'

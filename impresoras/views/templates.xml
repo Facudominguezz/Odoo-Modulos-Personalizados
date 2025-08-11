@@ -17,6 +17,11 @@
                                 string="Refrescar Lista API"
                                 class="btn-primary"
                                 help="Actualizar lista de impresoras desde la API"/>
+                        <button name="imprimir_pagina_prueba"
+                                type="object"
+                                string="Imprimir Página Prueba"
+                                class="btn-secondary"
+                                help="Genera y envía un PDF de prueba al endpoint /print-pdf"/>
                     </header>
                     
                     <sheet>
