@@ -13,7 +13,7 @@
             <!-- Modos de vista disponibles: lista primero, luego formulario -->
             <field name="view_mode">list,form</field>
             <!-- Vista por defecto que se abrirá (la lista) -->
-            <field name="view_id" ref="view_impresoras_tree"/>
+            <field name="view_id" ref="view_impresoras_list"/>
             <!-- Vista de búsqueda asociada -->
             <field name="search_view_id" ref="view_impresoras_search"/>
             <!-- Contexto con filtros por defecto -->
@@ -43,16 +43,18 @@
                 <form string="Impresoras">
                     <!-- Barra de botones en el header -->
                     <header>
-                        <button name="consultar_impresoras_api" 
-                                type="object" 
-                                string="Refrescar Lista API"
-                                class="btn-primary"
-                                help="Actualizar lista de impresoras desde la API"/>
+                         <button name="consultar_impresoras_api" 
+                            type="object" 
+                            string="Refrescar Lista API"
+                            class="btn-primary"
+                            modifiers='{"invisible": [["id", "=", false]]}'
+                            help="Actualizar lista de impresoras desde la API"/>
                         <button name="imprimir_pagina_prueba"
-                                type="object"
-                                string="Imprimir Página Prueba"
-                                class="btn-secondary"
-                                help="Genera y envía un PDF de prueba al endpoint /print-pdf"/>
+                            type="object"
+                            string="Imprimir Página Prueba"
+                            class="btn-secondary"
+                            modifiers='{"invisible": [["es_predeterminada","=", false]]}'
+                            help="Genera y envía un PDF de prueba al endpoint /print-pdf"/>
                     </header>
                     
                     <sheet>
@@ -80,6 +82,15 @@
                             <group>
                                 <!-- Lista de impresoras disponibles desde la API -->
                                 <field name="impresora_seleccionada"/>
+                            </group>
+                        </group>
+
+                        <!-- Parámetros de Etiqueta -->
+                        <group name="parametros_etiqueta" string="Parámetros de Etiqueta">
+                            <group>
+                                <field name="lenguaje" readonly="1"/>
+                                <field name="ancho_mm"/>
+                                <field name="alto_mm"/>
                             </group>
                         </group>
                         

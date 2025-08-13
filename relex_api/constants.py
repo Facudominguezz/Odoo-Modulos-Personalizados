@@ -37,15 +37,18 @@ def build_url(env, key):
         KeyError: Si la clave proporcionada no existe en ENDPOINTS
     """
     # Obtener la URL base desde la configuración del sistema
-    API_BASE_URL = get_api_base_url(env)
+    API_BASE_URL = get_api_base_url(env) or ''
 
     # Diccionario de endpoints disponibles en la API
     ENDPOINTS = {
-        'root': '/',                           # Endpoint raíz de la API
-        'printers': '/printers',               # Listado de impresoras
+        'root': '/',                                # Endpoint raíz de la API
+        'printers': '/printers',                    # Listado de impresoras
         'default_printer': '/impresora/predeterminada',  # Impresora por defecto
-        'print_pdf': '/print-pdf',             # Envío de PDF para impresión
+        'imprimir': '/imprimir',                    # Enviar impresión/prueba (alias)
+        'print_pdf': '/print-pdf',                  # Enviar PDF de prueba/trabajo
     }
 
     # Construir y retornar la URL completa usando urljoin para manejo seguro de rutas
+    if not API_BASE_URL:
+        raise ValueError("La URL base de la API no está configurada (relex_api.api_base_url)")
     return urljoin(API_BASE_URL.rstrip('/') + '/', ENDPOINTS[key].lstrip('/'))

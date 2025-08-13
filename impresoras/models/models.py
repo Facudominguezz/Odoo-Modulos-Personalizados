@@ -1,287 +1,206 @@
 # -*- coding: utf-8 -*-
 
-# Importaciones necesarias de Odoo
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 import logging
 
-# Logger para debug y errores
 _logger = logging.getLogger(__name__)
 
 
 class Impresoras(models.Model):
-    """
-    Modelo para gestionar configuraciones de impresoras.
-
-    Este modelo almacena configuraciones de impresoras de forma independiente.
-    """
-    
-    # ==================== CONFIGURACIÓN DEL MODELO ====================
-    
-    # Nombre técnico del modelo (usado internamente por Odoo)
     _name = "impresoras"
-
-    # Descripción humana del modelo (aparece en logs y referencias)
     _description = "Impresoras"
 
+    # === Parámetros de etiqueta (lenguaje fijo y dimensiones editables) ===
+    lenguaje = fields.Selection(
+        selection=[('zpl', 'ZPL')],
+        string='Lenguaje',
+        default='zpl',
+        required=True,
+        readonly=True
+    )
+    ancho_mm = fields.Float(string='Ancho (mm)', default=50.0, required=True)
+    alto_mm = fields.Float(string='Alto (mm)', default=30.0, required=True)
 
-    # ==================== DEFINICIÓN DE CAMPOS ====================
-    
-    # Campo de texto para identificar la configuración
-    name = fields.Char(
-        string='Nombre',
-        required=False,
-        help="Nombre descriptivo de la impresora"
-    )
-    
-    # Campo para almacenar la dirección IP de la impresora
-    direccion_ip = fields.Char(
-        string='Dirección IP',
-        required=False,
-        help="Dirección IP de la impresora"
-    )
-    
-    # Campo numérico para el puerto de conexión
-    puerto = fields.Char(
-        string='Puerto',
-        default='9100',
-        help="Puerto de conexión de la impresora"
-    )
+    # Estos valores se envían pero NO se muestran en la vista
+    mensaje = fields.Char(string='Mensaje', default='Impresora Configurada Correctamente', readonly=True)
+    codigo_estatico = fields.Char(string='Código Estático', default='ABC-001-XYZ', readonly=True)
 
-    # Campo de selección para las impresoras disponibles desde la API
+    # Datos de la impresora (se completan al elegir en selection)
+    name = fields.Char(string='Nombre', required=False, help="Nombre descriptivo de la impresora")
+    direccion_ip = fields.Char(string='Dirección IP', required=False, help="Dirección IP de la impresora")
+    puerto = fields.Char(string='Puerto', default='9100', help="Puerto de conexión de la impresora")
+
+    # Lista dinámica de impresoras desde la API
     impresora_seleccionada = fields.Selection(
         selection='_get_impresoras_disponibles',
         string='Impresora Disponible',
         help="Selecciona una impresora de la lista obtenida desde la API"
     )
-    
-    # Campo booleano para marcar la impresora predeterminada
+
     es_predeterminada = fields.Boolean(
         string='Impresora Predeterminada',
         default=False,
         help="Marca esta impresora como la predeterminada del sistema"
     )
-    
 
-    # ==================== MÉTODOS DE INTEGRACIÓN CON CONTROLADOR ====================
-    
+    # ==================== INTEGRACIÓN CON CONTROLADOR ====================
+
     def _get_controller(self):
-        """
-        Obtiene una instancia del controlador para realizar consultas a APIs externas.
-        
-        Returns:
-            ImpresionPersonalizadaController: Instancia del controlador
-        """
+        """Devuelve una instancia del controlador que expone consultar_api()."""
         try:
             from ..controllers.controllers import ImpresionPersonalizadaController
-            return ImpresionPersonalizadaController()
+            return ImpresionPersonalizadaController(self.env)
         except ImportError:
             _logger.error("No se pudo importar el controlador de impresión personalizada")
             raise
-    
+
+    def armar_datos_configuracion(self):
+        """Construye el JSON de configuración para enviar al middleware (/imprimir)."""
+        self.ensure_one()
+        if self.ancho_mm <= 0 or self.alto_mm <= 0:
+            raise UserError("El ancho y alto deben ser mayores a 0.")
+        return {
+            "lenguaje": "zpl",
+            "ancho_mm": int(self.ancho_mm),
+            "alto_mm": int(self.alto_mm),
+            "mensaje": self.mensaje or "",
+            "codigo_estatico": self.codigo_estatico or ""
+        }
+
+    # ==================== FUENTES DE DATOS DINÁMICAS ====================
+
     def _get_impresoras_disponibles(self):
         """
-        Obtiene la lista de impresoras disponibles desde la API externa usando constantes.
-
-        Returns:
-            list: Lista de tuplas (valor, etiqueta) para el campo Selection
+        Devuelve [(valor, etiqueta), ...] para el Selection, consultando /printers.
+        valor = name de la impresora; etiqueta = name mostrado.
         """
         try:
             controller = self._get_controller()
-
-            _logger.info("Obteniendo impresoras para Selection usando constantes de relex_api")
-            # Usar el método que utiliza constantes
-            return controller.get_impresoras_para_selection()
-
+            data = controller.consultar_api(endpoint_key='printers', metodo='GET', datos=None) or []
+            if not isinstance(data, list):
+                _logger.warning("Respuesta de /printers no es lista: %s", data)
+                return [('','Seleccione una impresora...')]
+            opciones = [(imp.get('name') or '', imp.get('name') or '') for imp in data if imp.get('name')]
+            return opciones or [('','Seleccione una impresora...')]
         except Exception as e:
-            _logger.error(f"Error al obtener impresoras desde controlador: {e}")
+            _logger.error("Error al consultar /printers: %s", e)
             return [
                 ('', 'Seleccione una impresora...'),
                 ('error', 'Error al consultar impresoras - Use "Refrescar Lista API"'),
             ]
 
+    # ==================== ACCIONES UI ====================
+
     def consultar_impresoras_api(self):
         """
-        Método para refrescar manualmente la lista de impresoras desde la API usando constantes.
-        Este método se llama desde el botón en la vista y usa el controlador.
+        Refresca la lista: recarga la vista para que el Selection llame nuevamente a _get_impresoras_disponibles().
         """
-        try:
-            # Limpiar selección actual
-            self.impresora_seleccionada = False
-            
-            # Usar el controlador para consultar la API
-            controller = self._get_controller()
+        _logger.info("Refrescando lista de impresoras (reload de vista)")
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
 
-            _logger.info("Refrescando lista de impresoras usando constantes de relex_api")
-
-            # Consultar la API usando constantes
-            impresoras_data = controller.consultar_impresoras_api_externa()
-
-            if impresoras_data:
-                # Forzar recarga del campo Selection
-                self._fields['impresora_seleccionada'].selection = self._get_impresoras_disponibles()
-                
-                return {
-                    'type': 'ir.actions.client',
-                    'tag': 'display_notification',
-                    'params': {
-                        'title': 'Éxito',
-                        'message': f'Lista actualizada: {len(impresoras_data)} impresoras encontradas desde API configurada',
-                        'type': 'success',
-                    }
-                }
-            else:
-                return {
-                    'type': 'ir.actions.client',
-                    'tag': 'display_notification',
-                    'params': {
-                        'title': 'Advertencia',
-                        'message': 'No se pudo conectar con la API - Verificar configuración en relex_api',
-                        'type': 'warning',
-                    }
-                }
-                
-        except Exception as e:
-            _logger.error(f"Error al refrescar impresoras: {e}")
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': 'Error',
-                    'message': f'Error al actualizar impresoras: {str(e)}',
-                    'type': 'danger',
-                }
-            }
-    
     @api.onchange('impresora_seleccionada')
     def _onchange_impresora_seleccionada(self):
         """
-        Cuando se selecciona una impresora desde la API, obtener automáticamente
-        los datos usando el controlador con constantes.
+        Al elegir una impresora del Selection, completa nombre y puerto con datos reales de /printers.
         """
         if self.impresora_seleccionada and self.impresora_seleccionada not in ['sin_conexion', 'vacio', 'error']:
             try:
-                # Obtener los datos directamente de la API usando el controlador
                 controller = self._get_controller()
-
-                # Usar constantes para consultar la API
-                impresoras_data = controller.consultar_impresoras_api_externa()
-
-                # Buscar la impresora seleccionada en los datos de la API
-                impresora_encontrada = None
-                for impresora in impresoras_data:
-                    if impresora.get('name') == self.impresora_seleccionada:
-                        impresora_encontrada = impresora
-                        break
-
-                if impresora_encontrada:
-                    # Usar los datos reales de la API sin generar datos sintéticos
-                    self.name = f"{impresora_encontrada.get('name', 'Sin nombre')}"
-
-                    # Usar el puerto real de la API tal como viene
-                    puerto_api = impresora_encontrada.get('port', '')
-                    # Si hay un puerto definido, usarlo, sino dejar vacío
-                    if puerto_api:
-                        self.puerto = puerto_api  # Mantener el puerto tal como viene de la API
+                data = controller.consultar_api(endpoint_key='printers', metodo='GET', datos=None) or []
+                if isinstance(data, list):
+                    imp = next((i for i in data if i.get('name') == self.impresora_seleccionada), None)
+                    if imp:
+                        self.name = imp.get('name') or self.impresora_seleccionada
+                        self.puerto = imp.get('port') or False
+                        self.direccion_ip = False  # no forzamos IP
+                        _logger.info("Actualizada impresora: name=%s port=%s ip=%s", self.name, self.puerto, self.direccion_ip)
                     else:
-                        self.puerto = False  # Dejar vacío si no hay puerto
-
-                    # No generar IP sintética, dejar vacío
-                    self.direccion_ip = False  # Dejar vacío - no generar IPs
-
-                    _logger.info(f"Datos actualizados para {self.impresora_seleccionada}: Nombre={self.name}, Puerto={self.puerto}, IP={self.direccion_ip}")
+                        self.name = self.impresora_seleccionada
+                        self.puerto = False
+                        self.direccion_ip = False
                 else:
-                    # Si no se encuentra la impresora en la API, usar valores por defecto
-                    self.name = f"{self.impresora_seleccionada}"
-                    self.direccion_ip = False  # Dejar vacío
-                    self.puerto = False  # Dejar vacío
-
+                    _logger.warning("Respuesta /printers no lista en onchange: %s", data)
             except Exception as e:
-                _logger.error(f"Error al actualizar datos de impresora: {e}")
-                # En caso de error, mantener el nombre seleccionado
-                self.name = f"{self.impresora_seleccionada}"
-                self.direccion_ip = False
+                _logger.error("Error en onchange de impresora: %s", e)
+                self.name = self.impresora_seleccionada
                 self.puerto = False
+                self.direccion_ip = False
 
-    # ==================== VALIDACIONES Y CONSTRAINS ====================
-
-    @api.constrains('es_predeterminada')
-    def _check_una_predeterminada(self):
+    def imprimir_pagina_prueba(self):
         """
-        Validación para asegurar que solo una impresora puede ser marcada como predeterminada.
+        Permite imprimir SOLO desde la impresora marcada como predeterminada.
+        Envía el JSON de configuración al endpoint /imprimir (POST).
         """
-        predeterminadas = self.search([('es_predeterminada', '=', True)])
-        if len(predeterminadas) > 1:
-            raise models.ValidationError(
-                "Solo puede haber una impresora marcada como predeterminada. "
-                f"Actualmente hay {len(predeterminadas)} marcadas."
-            )
+        # Debe existir una única predeterminada
+        pred = self.search([('es_predeterminada', '=', True)], limit=1)
+        if not pred:
+            raise UserError("Debes marcar una impresora como predeterminada antes de imprimir.")
 
-    # ==================== MÉTODOS AUTOMÁTICOS ====================
+        # La acción debe ejecutarse sobre ese registro (no sobre otro)
+        if len(self) != 1 or self.id != pred.id:
+            raise UserError(f"Solo la impresora predeterminada puede imprimir: {pred.name or pred.impresora_seleccionada}.")
+
+        # Enviar al middleware
+        controller = pred._get_controller()
+        payload = pred.armar_datos_configuracion()
+        _logger.info("POST /imprimir (predeterminada=%s) payload=%s", pred.name, payload)
+
+        resp = controller.consultar_api(endpoint_key='imprimir', metodo='POST', datos=payload)
+        _logger.info("Respuesta /imprimir: %s", resp)
+
+        if resp is None:
+            raise UserError("No se pudo enviar la configuración de prueba al middleware.")
+
+        return True
+
+    # ==================== LÓGICA PREDETERMINADA ====================
 
     def _enviar_predeterminada_automatico(self):
         """
-        Envía automáticamente la configuración cuando se marca una impresora como predeterminada.
-        Este método se ejecuta automáticamente al guardar.
+        Enviar a /impresoras/predeterminada cuando queda marcada como predeterminada.
         """
         if self.es_predeterminada:
             try:
                 controller = self._get_controller()
-
+                # La API espera claves en español: nombre, ip, puerto (+ timestamp opcional)
+                # No enviar valores False; omitir claves vacías
                 impresora_data = {
-                    'name': self.name,
-                    'direccion_ip': self.direccion_ip,
-                    'puerto': self.puerto,
+                    'nombre': self.name or self.impresora_seleccionada or '',
+                    'puerto': self.puerto or '',
+                    'timestamp': fields.Datetime.now().isoformat(),
                 }
-
-                exito = controller.enviar_predeterminada_api_externa(impresora_data)
-
-                if exito:
-                    _logger.info(f"Impresora predeterminada enviada automáticamente: {self.name}")
+                if self.direccion_ip:
+                    impresora_data['ip'] = self.direccion_ip
+                resp = controller.consultar_api(endpoint_key='default_printer', metodo='POST', datos=impresora_data)
+                if resp is not None:
+                    _logger.info("Predeterminada enviada a API: %s payload=%s", self.name, impresora_data)
                 else:
-                    _logger.warning(f"No se pudo enviar impresora predeterminada automáticamente: {self.name}")
-
+                    _logger.warning("No se pudo enviar predeterminada a API: %s", self.name)
             except Exception as e:
-                _logger.error(f"Error al enviar impresora predeterminada automáticamente: {e}")
+                _logger.error("Error enviando predeterminada a API: %s", e)
 
     @api.model
     def write(self, vals):
         """
-        Sobrescribir el método write para manejar automáticamente las impresoras predeterminadas.
+        Si se marca como predeterminada, desmarca otras y envía a la API.
         """
-        # Si se está marcando como predeterminada, desmarcar las demás
+        res = super().write(vals)
         if vals.get('es_predeterminada'):
-            # Buscar otras impresoras marcadas como predeterminadas
-            otras_predeterminadas = self.search([
-                ('es_predeterminada', '=', True),
-                ('id', '!=', self.id)
-            ])
-            # Desmarcarlas
-            if otras_predeterminadas:
-                otras_predeterminadas.write({'es_predeterminada': False})
-
-        # Ejecutar el write original
-        result = super().write(vals)
-
-        # Si se marcó como predeterminada, enviar a API automáticamente
-        if vals.get('es_predeterminada'):
+            # Desmarcar otras (multi-record safe)
+            otras = self.search([('es_predeterminada', '=', True), ('id', 'not in', self.ids)])
+            if otras:
+                otras.write({'es_predeterminada': False})
+            # Enviar esta como predeterminada
             self._enviar_predeterminada_automatico()
-
-        return result
+        return res
 
     @api.onchange('es_predeterminada')
     def _onchange_es_predeterminada(self):
-        """
-        Cuando se marca/desmarca como predeterminada, manejar la lógica automáticamente.
-        """
         if self.es_predeterminada:
-            # Advertir que se desmarcará automáticamente cualquier otra predeterminada
-            otras_predeterminadas = self.search([
-                ('es_predeterminada', '=', True),
-                ('id', '!=', self.id)
-            ])
-            if otras_predeterminadas:
-                nombres = ', '.join(otras_predeterminadas.mapped('name'))
+            otras = self.search([('es_predeterminada', '=', True), ('id', '!=', self.id)])
+            if otras:
+                nombres = ', '.join(otras.mapped('name'))
                 return {
                     'warning': {
                         'title': 'Cambio de impresora predeterminada',
@@ -289,148 +208,28 @@ class Impresoras(models.Model):
                     }
                 }
 
-    # ==================== MÉTODOS DE UTILIDAD ====================
+    # ==================== UTILIDADES ====================
 
     @api.model
     def obtener_impresora_predeterminada(self):
-        """
-        Obtiene la impresora marcada como predeterminada.
-
-        Returns:
-            recordset: La impresora predeterminada o recordset vacío si no hay ninguna
-        """
         return self.search([('es_predeterminada', '=', True)], limit=1)
 
     def verificar_consistencia_predeterminada(self):
-        """
-        Verifica la consistencia de las impresoras predeterminadas y corrige problemas.
-
-        Returns:
-            dict: Resultado de la verificación con estadísticas
-        """
         try:
-            predeterminadas = self.search([('es_predeterminada', '=', True)])
-
-            if len(predeterminadas) == 0:
-                return {
-                    'status': 'sin_predeterminada',
-                    'message': 'No hay impresoras marcadas como predeterminadas',
-                    'count': 0
-                }
-            elif len(predeterminadas) == 1:
-                return {
-                    'status': 'consistente',
-                    'message': f'Una impresora predeterminada: {predeterminadas[0].name}',
-                    'count': 1,
-                    'predeterminada': predeterminadas[0].name
-                }
-            else:
-                # Hay múltiples predeterminadas - corregir automáticamente
-                # Mantener solo la más reciente
-                predeterminada_a_mantener = predeterminadas.sorted('write_date', reverse=True)[0]
-                otras_a_desmarcar = predeterminadas - predeterminada_a_mantener
-
-                otras_a_desmarcar.write({'es_predeterminada': False})
-
-                return {
-                    'status': 'corregido',
-                    'message': f'Se encontraron {len(predeterminadas)} predeterminadas. Se mantuvo: {predeterminada_a_mantener.name}',
-                    'count': len(predeterminadas),
-                    'predeterminada': predeterminada_a_mantener.name,
-                    'corregidas': len(otras_a_desmarcar)
-                }
-
-        except Exception as e:
-            _logger.error(f"Error al verificar consistencia predeterminada: {e}")
+            pred = self.search([('es_predeterminada', '=', True)])
+            if len(pred) == 0:
+                return {'status': 'sin_predeterminada', 'message': 'No hay impresoras predeterminadas', 'count': 0}
+            if len(pred) == 1:
+                return {'status': 'consistente', 'message': f'Predeterminada: {pred[0].name}', 'count': 1, 'predeterminada': pred[0].name}
+            pred_keep = pred.sorted('write_date', reverse=True)[0]
+            (pred - pred_keep).write({'es_predeterminada': False})
             return {
-                'status': 'error',
-                'message': f'Error al verificar: {str(e)}',
-                'count': 0
+                'status': 'corregido',
+                'message': f'Se mantuvo: {pred_keep.name}',
+                'count': len(pred),
+                'predeterminada': pred_keep.name,
+                'corregidas': len(pred) - 1
             }
-
-    def establecer_como_predeterminada(self):
-        """
-        Establece esta impresora como la predeterminada del sistema y envía
-        la configuración a la API externa usando constantes.
-        """
-        try:
-            # Quitar marca de predeterminada a todas las demás impresoras
-            otras_impresoras = self.search([('id', '!=', self.id)])
-            otras_impresoras.write({'es_predeterminada': False})
-
-            # Marcar esta como predeterminada
-            self.es_predeterminada = True
-
-            # Enviar configuración a API externa usando constantes
-            controller = self._get_controller()
-
-            impresora_data = {
-                'name': self.name,
-                'direccion_ip': self.direccion_ip,
-                'puerto': self.puerto,
-            }
-
-            exito = controller.enviar_predeterminada_api_externa(impresora_data)
-
-            if exito:
-                return {
-                    'type': 'ir.actions.client',
-                    'tag': 'display_notification',
-                    'params': {
-                        'title': 'Éxito',
-                        'message': f'Impresora "{self.name}" establecida como predeterminada y enviada a API',
-                        'type': 'success',
-                    }
-                }
-            else:
-                return {
-                    'type': 'ir.actions.client',
-                    'tag': 'display_notification',
-                    'params': {
-                        'title': 'Advertencia',
-                        'message': f'Impresora marcada como predeterminada pero no se pudo enviar a API externa',
-                        'type': 'warning',
-                    }
-                }
-
         except Exception as e:
-            _logger.error(f"Error al establecer impresora predeterminada: {e}")
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': 'Error',
-                    'message': f'Error al establecer impresora predeterminada: {str(e)}',
-                    'type': 'danger',
-                }
-            }
-
-    def _generate_test_pdf_bytes(self):
-        """Genera un PDF muy simple en bytes para pruebas de impresión."""
-        pdf = b"""%PDF-1.4\n1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj\n2 0 obj <</Type /Pages /Kids [3 0 R] /Count 1>> endobj\n3 0 obj <</Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources <</Font <</F1 5 0 R>>>>>> endobj\n4 0 obj <</Length 64>> stream\nBT /F1 24 Tf 100 760 Td (Pagina de prueba de impresion) Tj ET\nendstream endobj\n5 0 obj <</Type /Font /Subtype /Type1 /BaseFont /Helvetica>> endobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000061 00000 n \n0000000116 00000 n \n0000000277 00000 n \n0000000374 00000 n \ntrailer <</Size 6 /Root 1 0 R>>\nstartxref\n441\n%%EOF\n"""
-        return pdf
-
-    def imprimir_pagina_prueba(self):
-        """Acción del botón: genera y envía un PDF de prueba a través del controlador sólo si es la impresora predeterminada."""
-        self.ensure_one()
-        if not self.id:
-            raise UserError("Guarde el registro antes de imprimir la página de prueba.")
-        # Validar que esta sea la impresora predeterminada vigente
-        predeterminada = self.obtener_impresora_predeterminada()
-        if not predeterminada or predeterminada.id != self.id:
-            raise UserError("Solo la impresora marcada como predeterminada puede imprimir la página de prueba.")
-        controller = self._get_controller()
-        pdf_content = self._generate_test_pdf_bytes()
-        exito, mensaje = controller.enviar_pdf_prueba(pdf_content, 'test_page.pdf')
-        if not exito:
-            raise UserError(mensaje)
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': 'Impresión',
-                'message': mensaje,
-                'type': 'success',
-                'sticky': False,
-            }
-        }
+            _logger.error("Error al verificar consistencia predeterminada: %s", e)
+            return {'status': 'error', 'message': str(e), 'count': 0}
