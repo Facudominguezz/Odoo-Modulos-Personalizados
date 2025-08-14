@@ -1,1 +1,0 @@
-from . import etiqueta_plantilla_categoria

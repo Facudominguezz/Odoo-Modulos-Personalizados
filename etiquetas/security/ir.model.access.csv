@@ -1,5 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_etiqueta_cat_user,access_etiqueta_cat_user,model_etiqueta_plantilla_categoria,base.group_user,1,0,0,0
-access_etiqueta_cat_manager,access_etiqueta_cat_manager,model_etiqueta_plantilla_categoria,etiquetas.group_etiquetas_manager,1,1,1,1
-access_etiqueta_cat_line_user,access_etiqueta_cat_line_user,model_etiqueta_plantilla_categoria_line,base.group_user,1,0,0,0
-access_etiqueta_cat_line_manager,access_etiqueta_cat_line_manager,model_etiqueta_plantilla_categoria_line,etiquetas.group_etiquetas_manager,1,1,1,1
