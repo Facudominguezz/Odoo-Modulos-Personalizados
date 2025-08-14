@@ -1,0 +1,10 @@
+<!-- modules/etiquetas/security/etiquetas_security.xml -->
+<odoo>
+    <data noupdate="1">
+        <record id="group_etiquetas_manager" model="res.groups">
+            <field name="name">Gestor de Etiquetas</field>
+            <field name="category_id" ref="base.module_category_inventory"/>
+            <field name="comment">Puede crear/editar plantillas de etiquetas por categoría.</field>
+        </record>
+    </data>
+</odoo>

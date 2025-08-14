@@ -1,0 +1,100 @@
+# Stock Barcode Label Print (Odoo 18)
+
+Botón “Imprimir” en la UI de Código de Barras (recepciones/pickings) que arma un JSON con los datos de la línea y lo reenvía a un middleware de impresión. No requiere vistas adicionales: se integra en los botones superiores de cada línea.
+
+## Compatibilidad y dependencias
+- Odoo 18 (Enterprise) – integra con `stock_barcode` (OWL/JS).
+- Depende de:
+  - `relex_api` (URL base y utilidades `build_url`).
+  - `impresoras` (gestiona impresora predeterminada y dimensiones de etiqueta).
+- Python: `requests` (ya declarado por los módulos).
+
+## Qué hace
+- Inyecta un botón con ícono de impresora sobre cada línea del escáner de códigos de barras.
+- Al hacer clic, construye un payload con:
+  - Datos del producto y del lote/serie (incluye `expiration_date`).
+  - Cantidad a imprimir (respeta tracking: serial imprime 1).
+- En el backend:
+  - Obtiene la “impresora predeterminada” desde el módulo `impresoras`.
+  - Completa `printer_config` con `printer_name`, `label_width_mm` y `label_height_mm`.
+  - Reenvía el JSON al middleware usando el cliente HTTP de `impresoras` o, en su defecto, un fallback con `relex_api` + `requests`.
+
+## Instalación
+1) Instalar/configurar dependencias:
+- `relex_api` (Ajustes → Integrations → “Impresoras - API Base URL”).
+- `impresoras` (definir impresora predeterminada y dimensiones: ancho/alto en mm).
+
+2) Instalar este módulo `stock_barcode_label_print`.
+
+3) Actualizar (para recompilar assets) y recargar el navegador:
+```powershell
+. .venv\Scripts\Activate.ps1
+python odoo-bin -c odoo.conf -d <db> -u stock_barcode_label_print
+# En el navegador: abrir /web?debug=assets y hacer Hard Reload (Ctrl+F5)
+```
+
+## Uso
+- Ir a Inventario → Código de barras → abrir una operación.
+- En cada línea verás un botón con ícono de impresora en la franja superior.
+- Clic en “Imprimir” para enviar el trabajo al middleware.
+
+## Flujo técnico
+### Frontend (OWL/JS)
+- Hereda la plantilla `stock_barcode.LineUpperButtons` para insertar el botón.
+- Parchea el componente `LineComponent` agregando `onPrintLabel()`.
+- Construcción del payload (resumen):
+  - `product_data`:
+    - `name`, `barcode`, `internal_reference`, `price` (si está disponible).
+    - `lot_serial_number` (si tracking ≠ none).
+  - `expiration_date`: prioridad `line.expiration_date` (modelo `stock.move.line`), si no existe toma `lot_id.expiration_date` o `lot_id.use_date`.
+  - `quantity`: si tracking = serial → 1; si no, utiliza cantidad hecha o remanente.
+  - `printer_config`: se envía vacío desde el frontend; el backend lo completa.
+- Llamada al servidor vía `rpc("/barcode_label_print/print", payload)`.
+
+### Backend (Controlador HTTP JSON)
+- Ruta: `/barcode_label_print/print` (`auth="user"`).
+- Obtiene `impresoras` con `es_predeterminada = True`. Si no existe, devuelve error.
+- Completa `payload["printer_config"]` con:
+  - `printer_name`: `pred.name`.
+  - `label_width_mm`: `pred.ancho_mm` (entero).
+  - `label_height_mm`: `pred.alto_mm` (entero).
+- Envía al middleware usando:
+  - Preferido: cliente HTTP del módulo `impresoras` (p. ej., método genérico `consultar_api` contra el endpoint lógico `print_pdf`).
+  - Fallback: `requests.post(build_url(env, "print_pdf"), json=payload)`.
+
+## Contrato de datos (referencia)
+Solicitud (desde el frontend; el backend añade `printer_config`):
+```json
+{
+  "product_data": {
+    "name": "Producto X",
+    "barcode": "0123456789012",
+    "internal_reference": "INT-001",
+    "price": 0,
+    "lot_serial_number": "L-0001",
+  "expiration_date": "2025-08-24 14:43:28"
+  },
+  "printer_config": {},
+  "quantity": 1
+}
+```
+Respuesta esperada del middleware (ejemplo):
+```json
+{ "status": "ok" }
+```
+El controlador reenvía el cuerpo recibido; si falla la llamada devuelve `{ ok: false, message: "..." }` al frontend.
+
+## Configuración necesaria
+- Ajustes → Integrations → “Impresoras - API Base URL” (módulo `relex_api`).
+- Módulo `impresoras`:
+  - Tener al menos una impresora creada y marcada como “Predeterminada”.
+  - Completar `Ancho (mm)` y `Alto (mm)` para definir el tamaño de la etiqueta.
+
+## Extensiones sugeridas
+- Enviar `copies` cuando tracking = serial y la cantidad escaneada > 1.
+- Registrar bitácora de impresiones (modelo simple) y añadir traducciones.
+- Exponer endpoint para consultar la impresora predeterminada actual.
+
+## Licencia y autoría
+- Licencia: LGPL-3
+- Autor: Reswoy

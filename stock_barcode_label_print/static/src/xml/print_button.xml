@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+  <!--
+    Añadimos un botón de impresión en los botones superiores de la línea.
+    Heredamos 'stock_barcode.LineUpperButtons' para mantener el look&feel.
+  -->
+  <t t-name="stock_barcode_label_print.LineUpperButtonsPrint"
+     t-inherit="stock_barcode.LineUpperButtons"
+     t-inherit-mode="extension">
+    <xpath expr="//div[contains(@class,'d-flex') and contains(@class,'flex-nowrap') and contains(@class,'gap-2')]" position="inside">
+      <button class="o_line_button o_print_label_btn btn"
+              t-attf-class="btn-{{isSelected || isComplete ? 'light' : 'secondary'}}"
+              t-on-click="onPrintLabel"
+              title="Imprimir etiqueta">
+        <i class="fa fa-lg fa-print" role="img"/>
+      </button>
+    </xpath>
+    <!-- New: label quantity setter under the 3 buttons -->
+    <xpath expr="//div[contains(@class,'d-flex') and contains(@class,'flex-nowrap') and contains(@class,'gap-2')]" position="after">
+      <div class="d-flex flex-column align-items-end">
+        <button class="o_line_button o_set_label_qty btn btn-secondary" t-on-click="onSetLabelQty">
+          <i class="fa fa-hashtag me-1" role="img"/>
+          <span>Cant. etiquetas</span>
+          <span t-if="line._label_print_qty" class="badge bg-info ms-2" t-esc="'x' + line._label_print_qty"/>
+        </button>
+      </div>
+    </xpath>
+  </t>
+</templates>
