@@ -1,35 +1,6 @@
 <odoo>
     <data>
      <!-- ============================================================ -->
-        <!-- ACCIONES (ACTIONS)                                          -->
-        <!-- ============================================================ -->
-        
-        <!-- Acción principal que define cómo se comporta el módulo -->
-        <record id="action_impresoras" model="ir.actions.act_window">
-            <!-- Nombre que aparecerá en la ventana -->
-            <field name="name">Impresoras</field>
-            <!-- Modelo de datos que maneja esta acción -->
-            <field name="res_model">impresoras</field>
-            <!-- Modos de vista disponibles: lista primero, luego formulario -->
-            <field name="view_mode">list,form</field>
-            <!-- Vista por defecto que se abrirá (la lista) -->
-            <field name="view_id" ref="view_impresoras_list"/>
-            <!-- Vista de búsqueda asociada -->
-            <field name="search_view_id" ref="view_impresoras_search"/>
-            <!-- Contexto con filtros por defecto -->
-            <field name="context">{'search_default_predeterminada': 1}</field>
-            <!-- Texto de ayuda cuando no hay registros -->
-            <field name="help" type="html">
-                <p class="o_view_nocontent_smiling_face">
-                    ¡Crea tu primera configuración de impresora!
-                </p>
-                <p>
-                    Configure sus impresoras conectándose a la API para obtener 
-                    la lista de dispositivos disponibles y establecer cuál será 
-                    la impresora predeterminada del sistema.
-                </p>
-            </field>
-        </record>
 
         <!-- ============================================================ -->
         <!-- VISTAS DEL MODELO impresoras                                -->
@@ -151,6 +122,36 @@
                                 context="{'group_by': 'impresora_seleccionada'}"/>
                     </group>
                 </search>
+            </field>
+        </record>
+
+         <!-- ACCIONES (ACTIONS)                                          -->
+        <!-- ============================================================ -->
+        
+        <!-- Acción principal que define cómo se comporta el módulo -->
+        <record id="action_impresoras" model="ir.actions.act_window">
+            <!-- Nombre que aparecerá en la ventana -->
+            <field name="name">Impresoras</field>
+            <!-- Modelo de datos que maneja esta acción -->
+            <field name="res_model">impresoras</field>
+            <!-- Modos de vista disponibles: lista primero, luego formulario -->
+            <field name="view_mode">list,form</field>
+            <!-- Vista por defecto que se abrirá (la lista) -->
+            <field name="view_id" ref="view_impresoras_list"/>
+            <!-- Vista de búsqueda asociada -->
+            <field name="search_view_id" ref="view_impresoras_search"/>
+            <!-- Contexto con filtros por defecto -->
+            <field name="context">{'search_default_predeterminada': 1}</field>
+            <!-- Texto de ayuda cuando no hay registros -->
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    ¡Crea tu primera configuración de impresora!
+                </p>
+                <p>
+                    Configure sus impresoras conectándose a la API para obtener 
+                    la lista de dispositivos disponibles y establecer cuál será 
+                    la impresora predeterminada del sistema.
+                </p>
             </field>
         </record>
 
