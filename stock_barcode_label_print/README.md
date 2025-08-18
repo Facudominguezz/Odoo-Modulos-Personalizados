@@ -6,7 +6,7 @@ Botón “Imprimir” en la UI de Código de Barras (recepciones/pickings) que a
 - Odoo 18 (Enterprise) – integra con `stock_barcode` (OWL/JS).
 - Depende de:
   - `relex_api` (URL base y utilidades `build_url`).
-  - `impresoras` (gestiona impresora predeterminada y dimensiones de etiqueta).
+  - `impresoras` (opcional: cliente HTTP genérico para llamadas al middleware; no gestiona impresoras predeterminadas ni tamaños de etiqueta).
 - Python: `requests` (ya declarado por los módulos).
 
 ## Qué hace
@@ -15,14 +15,13 @@ Botón “Imprimir” en la UI de Código de Barras (recepciones/pickings) que a
   - Datos del producto y del lote/serie (incluye `expiration_date`).
   - Cantidad a imprimir (respeta tracking: serial imprime 1).
 - En el backend:
-  - Obtiene la “impresora predeterminada” desde el módulo `impresoras`.
-  - Completa `printer_config` con `printer_name`, `label_width_mm` y `label_height_mm`.
-  - Reenvía el JSON al middleware usando el cliente HTTP de `impresoras` o, en su defecto, un fallback con `relex_api` + `requests`.
+  - Reenvía el JSON al middleware usando el cliente HTTP de `impresoras` o, en su defecto, `requests` con `build_url`.
+  - La selección de impresora y las dimensiones de etiqueta NO las gestiona este módulo; deben definirse en tu backend o resolverse en el middleware.
 
 ## Instalación
 1) Instalar/configurar dependencias:
 - `relex_api` (Ajustes → Integrations → “Impresoras - API Base URL”).
-- `impresoras` (definir impresora predeterminada y dimensiones: ancho/alto en mm).
+- Opcional: `impresoras` (solo si deseas reutilizar su cliente HTTP genérico).
 
 2) Instalar este módulo `stock_barcode_label_print`.
 
@@ -46,24 +45,20 @@ python odoo-bin -c odoo.conf -d <db> -u stock_barcode_label_print
   - `product_data`:
     - `name`, `barcode`, `internal_reference`, `price` (si está disponible).
     - `lot_serial_number` (si tracking ≠ none).
-  - `expiration_date`: prioridad `line.expiration_date` (modelo `stock.move.line`), si no existe toma `lot_id.expiration_date` o `lot_id.use_date`.
+  - `expiration_date`: prioridad `line.expiration_date`, si no existe toma `lot_id.expiration_date` o `lot_id.use_date`.
   - `quantity`: si tracking = serial → 1; si no, utiliza cantidad hecha o remanente.
-  - `printer_config`: se envía vacío desde el frontend; el backend lo completa.
-- Llamada al servidor vía `rpc("/barcode_label_print/print", payload)`.
+  - `printer_config`: el frontend puede enviarlo si ya lo conoce; este módulo no lo completa automáticamente.
+- Llamada al servidor vía `rpc("/barcode_label_print/print", payload)` o la ruta que implementes.
 
 ### Backend (Controlador HTTP JSON)
-- Ruta: `/barcode_label_print/print` (`auth="user"`).
-- Obtiene `impresoras` con `es_predeterminada = True`. Si no existe, devuelve error.
-- Completa `payload["printer_config"]` con:
-  - `printer_name`: `pred.name`.
-  - `label_width_mm`: `pred.ancho_mm` (entero).
-  - `label_height_mm`: `pred.alto_mm` (entero).
+- Ruta sugerida: `/barcode_label_print/print` (`auth="user"`).
+- Recibe el payload del frontend y, si aplica, lo complementa (por ejemplo `printer_config`) según tu lógica.
 - Envía al middleware usando:
-  - Preferido: cliente HTTP del módulo `impresoras` (p. ej., método genérico `consultar_api` contra el endpoint lógico `print_pdf`).
-  - Fallback: `requests.post(build_url(env, "print_pdf"), json=payload)`.
+  - Preferido: cliente HTTP del módulo `impresoras` (`ImpresionPersonalizadaController.consultar_api(...)`).
+  - Alternativa: `requests.post(build_url(env, "print_pdf"), json=payload)`.
 
 ## Contrato de datos (referencia)
-Solicitud (desde el frontend; el backend añade `printer_config`):
+Solicitud (el backend puede añadir `printer_config` si tu integración lo requiere):
 ```json
 {
   "product_data": {
@@ -72,9 +67,9 @@ Solicitud (desde el frontend; el backend añade `printer_config`):
     "internal_reference": "INT-001",
     "price": 0,
     "lot_serial_number": "L-0001",
-  "expiration_date": "2025-08-24 14:43:28"
+    "expiration_date": "2025-08-24 14:43:28"
   },
-  "printer_config": {},
+  "printer_config": {},  // opcional, definido por tu backend/middleware
   "quantity": 1
 }
 ```
@@ -86,11 +81,16 @@ El controlador reenvía el cuerpo recibido; si falla la llamada devuelve `{ ok: 
 
 ## Configuración necesaria
 - Ajustes → Integrations → “Impresoras - API Base URL” (módulo `relex_api`).
-- Módulo `impresoras`:
-  - Tener al menos una impresora creada y marcada como “Predeterminada”.
-  - Completar `Ancho (mm)` y `Alto (mm)` para definir el tamaño de la etiqueta.
+- `impresoras` NO es obligatorio; si lo instalas, úsalo sólo como cliente HTTP. La lógica de impresora predeterminada/dimensiones depende de tu implementación o del middleware.
 
 ## Extensiones sugeridas
+- Enviar `copies` cuando tracking = serial y la cantidad escaneada > 1.
+- Registrar bitácora de impresiones (modelo simple) y añadir traducciones.
+- Exponer endpoint para consultar y/o seleccionar impresora si tu caso lo requiere.
+
+## Licencia y autoría
+- Licencia: LGPL-3
+- Autor: Reswoy
 - Enviar `copies` cuando tracking = serial y la cantidad escaneada > 1.
 - Registrar bitácora de impresiones (modelo simple) y añadir traducciones.
 - Exponer endpoint para consultar la impresora predeterminada actual.
