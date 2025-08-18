@@ -10,7 +10,7 @@
     <xpath expr="//div[contains(@class,'d-flex') and contains(@class,'flex-nowrap') and contains(@class,'gap-2')]" position="inside">
       <button class="o_line_button o_print_label_btn btn"
               t-attf-class="btn-{{isSelected || isComplete ? 'light' : 'secondary'}}"
-              t-on-click="onPrintLabel"
+              t-on-click="alImprimirEtiqueta"
               title="Imprimir etiqueta">
         <i class="fa fa-lg fa-print" role="img"/>
       </button>
@@ -18,10 +18,10 @@
     <!-- New: label quantity setter under the 3 buttons -->
     <xpath expr="//div[contains(@class,'d-flex') and contains(@class,'flex-nowrap') and contains(@class,'gap-2')]" position="after">
       <div class="d-flex flex-column align-items-end">
-        <button class="o_line_button o_set_label_qty btn btn-secondary" t-on-click="onSetLabelQty">
+        <button class="o_line_button o_set_label_qty btn btn-secondary" t-on-click="alDefinirCantidadEtiquetas">
           <i class="fa fa-hashtag me-1" role="img"/>
           <span>Cant. etiquetas</span>
-          <span t-if="line._label_print_qty" class="badge bg-info ms-2" t-esc="'x' + line._label_print_qty"/>
+          <span t-if="line._cantidad_impresion_etiquetas" class="badge bg-info ms-2" t-esc="'x' + line._cantidad_impresion_etiquetas"/>
         </button>
       </div>
     </xpath>
