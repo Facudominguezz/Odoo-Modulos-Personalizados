@@ -27,37 +27,11 @@ function pedirCantidadInicial(valorActual = "") {
 }
 
 patch(LineaComponente.prototype, {
-    /**
-     * Evento de botón "Definir cantidad de etiquetas".
-     * Guarda la cantidad elegida por el usuario en la línea actual.
-     * Si la cantidad es válida, fuerza un re-render para actualizar la UI (badge).
-     *
-     * @param {Event} ev - Evento de click.
-     */
-    alDefinirCantidadEtiquetas(ev) {
-        ev.stopPropagation();
-        const linea = this.line;
-        if (!linea) return;
-
-        const numero = pedirCantidadInicial(linea._cantidad_impresion_etiquetas || "");
-        if (numero === null) return; // cancelado
-        if (Number.isNaN(numero)) {
-            this.env.model.notification(_t("Ingrese un número válido mayor a 0."), { type: "warning" });
-            return;
-        }
-
-        // Guardar en la línea la cantidad definida manualmente
-        linea._cantidad_impresion_etiquetas = numero;
-
-        // Re-renderizar la vista para actualizar badge
-        if (this.render) {
-            try { this.render(true); } catch (_) {}
-        }
-    },
+    
 
     /**
      * Evento de botón "Imprimir etiqueta".
-     * Si no hay cantidad definida, la solicita al usuario en el momento.
+     * Siempre solicita al usuario la cantidad mediante un prompt (usando el último valor como predeterminado).
      * Construye un payload con los datos del producto/lote/serie
      * y envía la solicitud de impresión al backend vía RPC.
      * Notifica en la UI el resultado (éxito o error).
@@ -72,18 +46,17 @@ patch(LineaComponente.prototype, {
             return;
         }
 
-        // Si no hay cantidad definida, pedirla ahora
-        if (!Number.isFinite(+linea._cantidad_impresion_etiquetas) || +linea._cantidad_impresion_etiquetas <= 0) {
-            const numero = pedirCantidadInicial("");
-            if (numero === null) return; // cancelado
-            if (Number.isNaN(numero)) {
-                this.env.model.notification(_t("Ingrese un número válido mayor a 0."), { type: "warning" });
-                return;
-            }
-            linea._cantidad_impresion_etiquetas = numero;
-            if (this.render) {
-                try { this.render(true); } catch (_) {}
-            }
+        // Siempre pedir cantidad (usar la última como valor por defecto si existe)
+        const numero = pedirCantidadInicial(linea._cantidad_impresion_etiquetas || "");
+        if (numero === null) return; // cancelado
+        if (Number.isNaN(numero)) {
+            this.env.model.notification(_t("Ingrese un número válido mayor a 0."), { type: "warning" });
+            return;
+        }
+        linea._cantidad_impresion_etiquetas = numero;
+        // Re-render opcional (por si hay badges u otros indicadores)
+        if (this.render) {
+            try { this.render(true); } catch (_) {}
         }
 
         // Datos del producto y trazabilidad
