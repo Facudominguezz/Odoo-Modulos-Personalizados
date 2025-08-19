@@ -87,7 +87,6 @@ patch(LineaComponente.prototype, {
                 numero_lote_serial: seguimiento !== "none" ? numero_lote : null,
                 fecha_vencimiento: fecha_vencimiento,
             },
-            configuracion_impresora: {}, // se resuelve en backend ('impresoras')
             cantidad: cantidad_final,
         };
 

@@ -56,16 +56,42 @@ class Impresoras(models.Model):
             raise
 
     def armar_datos_configuracion(self):
-        """Construye el JSON de configuración para enviar al middleware (/imprimir)."""
+        """Construye el payload de prueba para el middleware (/imprimir) con el nuevo formato.
+
+        Estructura:
+        {
+          "datos_producto": {
+            "nombre": str,
+            "codigo_barras": str,
+            "referencia_interna": str,
+            "precio": number,
+            "numero_lote_serial": str | None,
+            "fecha_vencimiento": str | None
+          },
+          "cantidad": int,
+          "printer_config": {"label_width_mm": int, "label_height_mm": int}
+        }
+        """
         self.ensure_one()
         if self.ancho_mm <= 0 or self.alto_mm <= 0:
             raise UserError("El ancho y alto deben ser mayores a 0.")
+
         return {
-            "lenguaje": "zpl",
-            "ancho_mm": int(self.ancho_mm),
-            "alto_mm": int(self.alto_mm),
-            "mensaje": self.mensaje or "",
-            "codigo_estatico": self.codigo_estatico or ""
+            "datos_producto": {
+                "nombre": "Página de prueba",
+                "codigo_barras": "TEST-0000000000",
+                "referencia_interna": "TEST-PAGE",
+                "precio": 0,
+                # Campos opcionales pueden ser null (se serializan como null en JSON)
+                "numero_lote_serial": "LOT2024-08A",
+                "fecha_vencimiento": "2025-12-3",
+            },
+            # Para prueba imprimimos 1 etiqueta
+            "cantidad": 1,
+            "printer_config": {
+                "label_width_mm": int(self.ancho_mm),
+                "label_height_mm": int(self.alto_mm),
+            },
         }
 
     # ==================== FUENTES DE DATOS DINÁMICAS ====================
