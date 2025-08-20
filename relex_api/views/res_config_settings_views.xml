@@ -17,6 +17,10 @@
                          help="URL base del middleware de impresoras">
                     <field name="api_base_url" placeholder="http://10.0.0.1:5000"/>
                 </setting>
+                <setting id="relex_api_key" string="Impresoras - API Key"
+                         help="Clave de API proporcionada por Relex para autenticarse con el middleware">
+                    <field name="api_key" placeholder="Ingrese su API Key aquí" password="True"/>
+                </setting>
             </xpath>
         </field>
     </record>

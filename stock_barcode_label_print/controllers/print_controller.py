@@ -104,17 +104,7 @@ class BarcodeLabelPrintController(http.Controller):
                     return {"ok": False, "message": "Fallo al enviar a middleware (consultar_api)"}
                 return {"ok": True, "result": resp}
             except Exception as e:  # pragma: no cover
-                _logger.exception("Error usando cliente impresoras: %s", e)
-                return {"ok": False, "message": str(e)}
-
-        # Fallback liviano: llamada directa usando relex_api
-        if not build_url:
-            return {"ok": False, "message": "No se puede construir URL (relex_api no presente)"}
-        try:
-            url = build_url(env, "imprimir")
-            r = requests.post(url, json=out_payload, timeout=15)
-            r.raise_for_status()
-            return {"ok": True, "result": r.json()}
-        except Exception as e:  # pragma: no cover
-            _logger.exception("Error enviando a middleware (fallback): %s", e)
-            return {"ok": False, "message": str(e)}
+                # Mensaje claro cuando falta API Key / URL base u otros errores
+                msg = str(e) or "Error al enviar al middleware. Verifique configuración Relex API."
+                _logger.exception("Error usando cliente impresoras: %s", msg)
+                return {"ok": False, "message": msg}

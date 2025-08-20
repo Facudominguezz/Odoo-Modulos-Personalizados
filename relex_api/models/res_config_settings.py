@@ -25,3 +25,9 @@ class ResConfigSettings(models.TransientModel):
         help="URL base para la API de impresoras Relex. "
              "Ejemplo: https://api.relex.com/v1"
     )
+    
+    api_key = fields.Char(
+        string="API Key",
+        config_parameter='relex_api.api_key',
+        help="Clave de API proporcionada por Relex para autenticarse con el middleware"
+    )

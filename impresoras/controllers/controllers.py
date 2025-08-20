@@ -11,6 +11,7 @@ from typing import Any, Optional
 import requests
 
 from odoo.addons.relex_api.constants import build_url
+from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -61,11 +62,22 @@ class ImpresionPersonalizadaController:
             _logger.error("No se pudo construir la URL para '%s': %s", endpoint_key, e)
             return None
 
+        api_key = self.env['ir.config_parameter'].sudo().get_param('relex_api.api_key')
+        if not api_key:
+            msg = (
+                "No hay API Key configurada para Relex. Configure 'relex_api.api_key' en Ajustes > Relex API."
+            )
+            _logger.error(msg)
+            # Levantamos UserError para que en UI/JSON se devuelva un mensaje claro
+            raise UserError(msg)
+        
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
             "User-Agent": "Odoo-Impresoras/1.0",
         }
+        if api_key:
+            headers["X-API-Key"] = api_key
 
         metodo = (metodo or "GET").upper()
         payload = datos or {}
