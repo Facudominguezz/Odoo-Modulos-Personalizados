@@ -100,6 +100,24 @@ class Impresoras(models.Model):
         Devuelve [(valor, etiqueta), ...] para el Selection, consultando /printers.
         valor = name de la impresora; etiqueta = name mostrado.
         """
+        # Validación de configuración antes de llamar a la API para poder mostrar un mensaje en la UI
+        params = self.env['ir.config_parameter'].sudo()
+        api_base = params.get_param('relex_api.api_base_url')
+        api_key = params.get_param('relex_api.api_key')
+
+        if not api_base or not api_key:
+            faltantes = []
+            if not api_base:
+                faltantes.append('API Base URL')
+            if not api_key:
+                faltantes.append('API Key')
+            msg = "Falta configurar: " + ", ".join(faltantes) + " (Ajustes > Relex API)"
+            _logger.warning("Impresoras: %s", msg)
+            return [
+                ('', 'Seleccione una impresora...'),
+                ('config_faltante', msg),
+            ]
+
         try:
             controller = self._get_controller()
             data = controller.consultar_api(endpoint_key='printers', metodo='GET', datos=None) or []
@@ -112,15 +130,38 @@ class Impresoras(models.Model):
             _logger.error("Error al consultar /printers: %s", e)
             return [
                 ('', 'Seleccione una impresora...'),
-                ('error', 'Error al consultar impresoras - Use "Refrescar Lista API"'),
+                ('error', 'Error al consultar impresoras - Verifique conexión y configuración'),
             ]
 
     # ==================== ACCIONES UI ====================
 
     def consultar_impresoras_api(self):
         """
-        Refresca la lista: recarga la vista para que el Selection llame nuevamente a _get_impresoras_disponibles().
+        Refresca la lista: si la configuración está incompleta, muestra notificación; si está OK, recarga la vista.
         """
+        params = self.env['ir.config_parameter'].sudo()
+        api_base = params.get_param('relex_api.api_base_url')
+        api_key = params.get_param('relex_api.api_key')
+
+        if not api_base or not api_key:
+            faltantes = []
+            if not api_base:
+                faltantes.append('API Base URL')
+            if not api_key:
+                faltantes.append('API Key')
+            msg = "Falta configurar: " + ", ".join(faltantes) + " (Ajustes > Relex API)"
+            _logger.warning("No se puede refrescar lista de impresoras: %s", msg)
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Relex API',
+                    'message': msg,
+                    'type': 'warning',
+                    'sticky': True,
+                }
+            }
+
         _logger.info("Refrescando lista de impresoras (reload de vista)")
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
