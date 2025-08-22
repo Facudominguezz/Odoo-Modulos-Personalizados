@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from odoo import models, fields, api
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -11,14 +11,7 @@ class Impresoras(models.Model):
     _name = "impresoras"
     _description = "Impresoras"
 
-    # === Parámetros de etiqueta (lenguaje fijo y dimensiones editables) ===
-    lenguaje = fields.Selection(
-        selection=[('zpl', 'ZPL')],
-        string='Lenguaje',
-        default='zpl',
-        required=True,
-        readonly=True
-    )
+    # === Parámetros de etiqueta (dimensiones editables) ===
     ancho_mm = fields.Float(string='Ancho (mm)', default=50.0, required=True)
     alto_mm = fields.Float(string='Alto (mm)', default=30.0, required=True)
 
@@ -27,9 +20,9 @@ class Impresoras(models.Model):
     codigo_estatico = fields.Char(string='Código Estático', default='ABC-001-XYZ', readonly=True)
 
     # Datos de la impresora (se completan al elegir en selection)
-    name = fields.Char(string='Nombre', required=False, help="Nombre descriptivo de la impresora")
+    name = fields.Char(string='Nombre', required=True, help="Nombre descriptivo de la impresora")
     direccion_ip = fields.Char(string='Dirección IP', required=False, help="Dirección IP de la impresora")
-    puerto = fields.Char(string='Puerto', default='9100', help="Puerto de conexión de la impresora")
+    puerto = fields.Char(string='Puerto', default='9100', required=True, help="Puerto de conexión de la impresora")
 
     # Lista dinámica de impresoras desde la API
     impresora_seleccionada = fields.Selection(
@@ -93,6 +86,16 @@ class Impresoras(models.Model):
             'cantidad': 1,
         }
 
+    @api.constrains('name', 'puerto')
+    def _check_nombre_puerto(self):
+        """Evita duplicados y registros sin nombre o puerto"""
+        for rec in self:
+            if not rec.name or not rec.puerto:
+                raise ValidationError("Debe ingresar un nombre y un puerto para la impresora.")
+            domain = [('name', '=', rec.name), ('puerto', '=', rec.puerto), ('id', '!=', rec.id)]
+            if rec.search_count(domain) > 0:
+                raise ValidationError("Ya existe una impresora con el mismo nombre y puerto.")
+
     # ==================== FUENTES DE DATOS DINÁMICAS ====================
 
     def _get_impresoras_disponibles(self):
@@ -134,7 +137,6 @@ class Impresoras(models.Model):
             ]
 
     # ==================== ACCIONES UI ====================
-
     def consultar_impresoras_api(self):
         """
         Refresca la lista: si la configuración está incompleta, muestra notificación; si está OK, recarga la vista.

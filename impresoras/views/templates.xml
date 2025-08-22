@@ -1,11 +1,11 @@
 <odoo>
     <data>
-     <!-- ============================================================ -->
+        <!-- ============================================================ -->
 
         <!-- ============================================================ -->
         <!-- VISTAS DEL MODELO impresoras                                -->
         <!-- ============================================================ -->
-        
+
         <!-- Vista de formulario para crear/editar configuraciones de impresión -->
         <record id="view_impresoras_form" model="ir.ui.view">
             <field name="name">impresoras.form</field>
@@ -14,37 +14,39 @@
                 <form string="Impresoras">
                     <!-- Barra de botones en el header -->
                     <header>
-                         <button name="consultar_impresoras_api" 
-                            type="object" 
+                        <!-- 
+                            <button name="consultar_impresoras_api"
+                            type="object"
                             string="Refrescar Lista API"
                             class="btn-primary"
-                            modifiers='{"invisible": [["id", "=", false]]}'
-                            help="Actualizar lista de impresoras desde la API"/>
+                            help="Actualizar lista de impresoras desde la API" />
+                        -->
                         <button name="imprimir_pagina_prueba"
                             type="object"
                             string="Imprimir Página Prueba"
                             class="btn-secondary"
                             modifiers='{"invisible": [["es_predeterminada","=", false]]}'
-                            help="Genera y envía un PDF de prueba al endpoint /print-pdf"/>
+                            help="Genera y envía una pagina de prueba al middleware para imprimir" />
                     </header>
-                    
+
                     <sheet>
                         <!-- Grupo de información básica -->
                         <group name="info_basica" string="Configuración Básica">
                             <group>
                                 <!-- Campo automático obtenido del middleware -->
-                                <field name="name" readonly="1" force_save="1"/>
-                                <!-- Marcar como impresora predeterminada con actualización automática -->
-                                <field name="es_predeterminada" 
-                                       widget="boolean_button"
-                                       options="{'terminology': 'active'}"
-                                       help="Solo puede haber una impresora predeterminada. Al marcar esta, se desmarcará automáticamente la anterior."/>
+                                <field name="name" readonly="1" force_save="1" />
+                                <!-- Marcar como impresora predeterminada con actualización
+                                automática -->
+                                <field name="es_predeterminada"
+                                    widget="boolean_button"
+                                    options="{'terminology': 'active'}"
+                                    help="Solo puede haber una impresora predeterminada. Al marcar esta, se desmarcará automáticamente la anterior." />
                             </group>
                             <group>
                                 <!-- Dirección IP obtenida automáticamente del middleware -->
-                                <field name="direccion_ip" readonly="1" force_save="1"/>
+                                <field name="direccion_ip" readonly="1" force_save="1" />
                                 <!-- Puerto obtenido automáticamente del middleware -->
-                                <field name="puerto" readonly="1" force_save="1"/>
+                                <field name="puerto" readonly="1" force_save="1" />
                             </group>
                         </group>
 
@@ -52,29 +54,31 @@
                         <group name="obtener_impresoras" string="Configuración de Impresora">
                             <group>
                                 <!-- Lista de impresoras disponibles desde la API -->
-                                <field name="impresora_seleccionada"/>
+                                <field name="impresora_seleccionada" />
                             </group>
                         </group>
 
                         <!-- Parámetros de Etiqueta -->
                         <group name="parametros_etiqueta" string="Parámetros de Etiqueta">
                             <group>
-                                <field name="lenguaje" readonly="1"/>
-                                <field name="ancho_mm"/>
-                                <field name="alto_mm"/>
+                                <field name="ancho_mm" />
+                                <field name="alto_mm" />
                             </group>
                         </group>
-                        
+
                         <!-- Información adicional -->
                         <group name="info_adicional" string="Información">
                             <div class="alert alert-info" role="alert">
                                 <strong>Instrucciones de uso:</strong>
                                 <ul>
                                     <li>Configure la URL de la API en el campo correspondiente</li>
-                                    <li>Use "Refrescar Lista API" para obtener las impresoras disponibles</li>
+                                    <li>Use "Refrescar Lista API" para obtener las impresoras
+                                        disponibles</li>
                                     <li>Seleccione una impresora de la lista obtenida de la API</li>
-                                    <li>Los datos de nombre, IP y puerto se obtienen automáticamente del middleware</li>
-                                    <li>Al marcar como "Predeterminada" y guardar se envía automáticamente la configuración a la API</li>
+                                    <li>Los datos de nombre, IP y puerto se obtienen automáticamente
+                                        del middleware</li>
+                                    <li>Al marcar como "Predeterminada" y guardar se envía
+                                        automáticamente la configuración a la API</li>
                                 </ul>
                             </div>
                         </group>
@@ -90,11 +94,11 @@
             <field name="arch" type="xml">
                 <list string="Impresoras">
                     <!-- Campos que se mostrarán en la vista de lista -->
-                    <field name="name"/>
-                    <field name="direccion_ip"/>
-                    <field name="puerto"/>
+                    <field name="name" />
+                    <field name="direccion_ip" />
+                    <field name="puerto" />
                     <!-- Indicador visual de impresora predeterminada -->
-                    <field name="es_predeterminada" widget="boolean_toggle" readonly="1"/>
+                    <field name="es_predeterminada" widget="boolean_toggle" readonly="1" />
                 </list>
             </field>
         </record>
@@ -106,28 +110,28 @@
             <field name="arch" type="xml">
                 <search string="Buscar Impresoras">
                     <!-- Campo de búsqueda por nombre -->
-                    <field name="name" string="Nombre"/>
-                    <field name="impresora_seleccionada" string="Impresora"/>
-                    <field name="direccion_ip" string="IP"/>
-                    
+                    <field name="name" string="Nombre" />
+                    <field name="impresora_seleccionada" string="Impresora" />
+                    <field name="direccion_ip" string="IP" />
+
                     <!-- Filtros predefinidos -->
-                    <filter name="predeterminada" 
-                            string="Predeterminada" 
-                            domain="[('es_predeterminada', '=', True)]"/>
-                    
+                    <filter name="predeterminada"
+                        string="Predeterminada"
+                        domain="[('es_predeterminada', '=', True)]" />
+
                     <!-- Agrupaciones -->
                     <group expand="0" string="Agrupar por">
-                        <filter name="group_impresora" 
-                                string="Impresora" 
-                                context="{'group_by': 'impresora_seleccionada'}"/>
+                        <filter name="group_impresora"
+                            string="Impresora"
+                            context="{'group_by': 'impresora_seleccionada'}" />
                     </group>
                 </search>
             </field>
         </record>
 
-         <!-- ACCIONES (ACTIONS)                                          -->
+        <!-- ACCIONES (ACTIONS)                                          -->
         <!-- ============================================================ -->
-        
+
         <!-- Acción principal que define cómo se comporta el módulo -->
         <record id="action_impresoras" model="ir.actions.act_window">
             <!-- Nombre que aparecerá en la ventana -->
@@ -137,9 +141,9 @@
             <!-- Modos de vista disponibles: lista primero, luego formulario -->
             <field name="view_mode">list,form</field>
             <!-- Vista por defecto que se abrirá (la lista) -->
-            <field name="view_id" ref="view_impresoras_list"/>
+            <field name="view_id" ref="view_impresoras_list" />
             <!-- Vista de búsqueda asociada -->
-            <field name="search_view_id" ref="view_impresoras_search"/>
+            <field name="search_view_id" ref="view_impresoras_search" />
             <!-- Contexto con filtros por defecto -->
             <field name="context">{'search_default_predeterminada': 1}</field>
             <!-- Texto de ayuda cuando no hay registros -->
@@ -148,14 +152,13 @@
                     ¡Crea tu primera configuración de impresora!
                 </p>
                 <p>
-                    Configure sus impresoras conectándose a la API para obtener 
-                    la lista de dispositivos disponibles y establecer cuál será 
+                    Configure sus impresoras conectándose a la API para obtener
+                    la lista de dispositivos disponibles y establecer cuál será
                     la impresora predeterminada del sistema.
                 </p>
             </field>
         </record>
 
-       
 
     </data>
 </odoo>
