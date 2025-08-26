@@ -170,30 +170,67 @@ class Impresoras(models.Model):
     @api.onchange('impresora_seleccionada')
     def _onchange_impresora_seleccionada(self):
         """
-        Al elegir una impresora del Selection, completa nombre y puerto con datos reales de /printers.
+        Al elegir una impresora del Selection, SIEMPRE completa desde la API /printers.
+        Si no hay datos válidos o falla la consulta, muestra un error y limpia los campos.
         """
-        if self.impresora_seleccionada and self.impresora_seleccionada not in ['sin_conexion', 'vacio', 'error']:
-            try:
-                controller = self._get_controller()
-                data = controller.consultar_api(endpoint_key='printers', metodo='GET', datos=None) or []
-                if isinstance(data, list):
-                    imp = next((i for i in data if i.get('name') == self.impresora_seleccionada), None)
-                    if imp:
-                        self.name = imp.get('name') or self.impresora_seleccionada
-                        self.puerto = imp.get('port') or False
-                        self.direccion_ip = False  # no forzamos IP
-                        _logger.info("Actualizada impresora: name=%s port=%s ip=%s", self.name, self.puerto, self.direccion_ip)
-                    else:
-                        self.name = self.impresora_seleccionada
-                        self.puerto = False
-                        self.direccion_ip = False
-                else:
-                    _logger.warning("Respuesta /printers no lista en onchange: %s", data)
-            except Exception as e:
-                _logger.error("Error en onchange de impresora: %s", e)
-                self.name = self.impresora_seleccionada
-                self.puerto = False
-                self.direccion_ip = False
+        self.ensure_one()
+        # Ignorar valores “sentinela”
+        if not self.impresora_seleccionada or self.impresora_seleccionada in {'sin_conexion', 'vacio', 'error'}:
+            return
+        # Intentar consultar el middleware
+        try:
+            controller = self._get_controller()
+            data = controller.consultar_api(endpoint_key='printers', metodo='GET', datos=None) or []
+        except Exception as e:
+            _logger.exception("Error consultando /printers en onchange: %s", e)
+            # Limpiamos porque no podemos confiar en datos locales
+            self.name = False
+            self.puerto = False
+            self.direccion_ip = False
+            return {
+                'warning': {
+                    'title': _("Error consultando impresoras"),
+                    'message': _(
+                        "No se pudo obtener la lista de impresoras desde el middleware (/printers). "
+                        "Detalle técnico: %s"
+                    ) % e
+                }
+            }
+        # Validar tipo y contenido
+        if not isinstance(data, list) or not data:
+            _logger.warning("Respuesta /printers inválida o vacía en onchange: %s", data)
+            self.name = False
+            self.puerto = False
+            self.direccion_ip = False
+            return {
+                'warning': {
+                    'title': _("Sin datos de impresoras"),
+                    'message': _(
+                        "El middleware respondió sin datos válidos. "
+                        "Verifique conectividad y credenciales."
+                    )
+                }
+            }
+
+        # Buscar la impresora seleccionada en los datos de la API (única fuente de verdad)
+        imp = next((i for i in data if i.get('name') == self.impresora_seleccionada), None)
+        if not imp:
+            _logger.info("Impresora '%s' no encontrada en /printers.", self.impresora_seleccionada)
+            self.name = False
+            self.puerto = False
+            self.direccion_ip = False
+            return {
+                'warning': {
+                    'title': _("Impresora no encontrada"),
+                    'message': _("La impresora '%s' no existe en /printers del middleware.") % self.impresora_seleccionada
+                }
+            }
+
+        # Actualizar con datos reales de la API
+        self.name = imp.get('name') or False
+        self.puerto = imp.get('port') or False
+        self.direccion_ip = False
+        _logger.info("Actualizada impresora desde API: name=%s port=%s ip=%s", self.name, self.puerto, self.direccion_ip)
 
     def imprimir_pagina_prueba(self):
         """
@@ -276,28 +313,4 @@ class Impresoras(models.Model):
                     }
                 }
 
-    # ==================== UTILIDADES ====================
 
-    @api.model
-    def obtener_impresora_predeterminada(self):
-        return self.search([('es_predeterminada', '=', True)], limit=1)
-
-    def verificar_consistencia_predeterminada(self):
-        try:
-            pred = self.search([('es_predeterminada', '=', True)])
-            if len(pred) == 0:
-                return {'status': 'sin_predeterminada', 'message': 'No hay impresoras predeterminadas', 'count': 0}
-            if len(pred) == 1:
-                return {'status': 'consistente', 'message': f'Predeterminada: {pred[0].name}', 'count': 1, 'predeterminada': pred[0].name}
-            pred_keep = pred.sorted('write_date', reverse=True)[0]
-            (pred - pred_keep).write({'es_predeterminada': False})
-            return {
-                'status': 'corregido',
-                'message': f'Se mantuvo: {pred_keep.name}',
-                'count': len(pred),
-                'predeterminada': pred_keep.name,
-                'corregidas': len(pred) - 1
-            }
-        except Exception as e:
-            _logger.error("Error al verificar consistencia predeterminada: %s", e)
-            return {'status': 'error', 'message': str(e), 'count': 0}
