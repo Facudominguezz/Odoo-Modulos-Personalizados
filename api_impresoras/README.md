@@ -1,4 +1,4 @@
-# Módulo `relex_api`
+# Módulo `api_impresoras`
 
 Configuración y utilidades centrales para consumir servicios externos (middleware) relacionados con impresoras u otros servicios Relex. Proporciona:
 
@@ -12,7 +12,7 @@ Estandarizar cómo los módulos Odoo internos acceden a la API externa, evitando
 
 ## Funcionalidad Actual
 1. Campo de configuración en `Ajustes > General Settings > Integrations`: API Base URL.
-2. Parámetro del sistema: `relex_api.api_base_url` (almacenado en `ir.config_parameter`).
+2. Parámetro del sistema: `api_impresoras.api_base_url` (almacenado en `ir.config_parameter`).
 3. Función `get_api_base_url(env)` devuelve la URL base configurada (string o None).
 4. Función `build_url(env, key)` combina la base con el endpoint asociado a `key`.
 5. Diccionario interno de endpoints (centralizado en `constants.py`).
@@ -37,24 +37,24 @@ Dependencias declaradas:
 Instalar:
 ```powershell
 pip install requests
-python odoo-bin -c odoo.conf -d <db> -i relex_api
+python odoo-bin -c odoo.conf -d <db> -i api_impresoras
 ```
 
 Actualizar tras cambios:
 ```powershell
-python odoo-bin -c odoo.conf -d <db> -u relex_api
+python odoo-bin -c odoo.conf -d <db> -u api_impresoras
 ```
 
 ## Configuración
 1. Ir a Ajustes (Settings) con permisos de administrador.
 2. Localizar bloque Integrations.
 3. Campo: “Impresoras - API Base URL”. Ejemplo: `http://localhost:8080/api` (sin slash final opcional; la función lo normaliza).
-4. Guardar. El parámetro se almacena como `relex_api.api_base_url`.
+4. Guardar. El parámetro se almacena como `api_impresoras.api_base_url`.
 
 ## Uso en Otros Módulos
 Importar utilidades:
 ```python
-from odoo.addons.relex_api.constants import build_url, get_api_base_url
+from odoo.addons.api_impresoras.constants import build_url, get_api_base_url
 
 api_base = get_api_base_url(env)               # -> 'http://localhost:8080/api'
 printers_url = build_url(env, 'printers')      # -> 'http://localhost:8080/api/printers'

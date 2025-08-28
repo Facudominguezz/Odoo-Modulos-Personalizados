@@ -1,10 +1,10 @@
 # Impresoras
 
-Centraliza llamadas HTTP a un servicio/middleware externo usando la URL base y utilidades provistas por el módulo `relex_api`.
+Centraliza llamadas HTTP a un servicio/middleware externo usando la URL base y utilidades provistas por el módulo `api_impresoras`.
 
 ## Descripción
 Este módulo expone un cliente simple (no define rutas HTTP de Odoo) para consumir la API externa:
-- Construye URLs con `relex_api.constants.build_url(env, endpoint_key)`.
+- Construye URLs con `api_impresoras.constants.build_url(env, endpoint_key)`.
 - Soporta métodos: GET, POST, PUT, PATCH, DELETE.
 - Envía/recibe JSON.
 - Maneja reintentos ante fallos transitorios de red/timeout (con backoff incremental).
@@ -12,10 +12,10 @@ Este módulo expone un cliente simple (no define rutas HTTP de Odoo) para consum
 
 ## Requisitos
 - Python: biblioteca `requests`.
-- Módulo interno: `relex_api` (provee `build_url` y configuración de base URL).
+- Módulo interno: `api_impresoras` (provee `build_url` y configuración de base URL).
 
 ## Configuración
-- Configura la URL base de la API y el mapeo de endpoints en el módulo `relex_api` (parámetros/constantes que usa `build_url`).
+- Configura la URL base de la API y el mapeo de endpoints en el módulo `api_impresoras` (parámetros/constantes que usa `build_url`).
 - Este cliente no añade autenticación por defecto. Si la API requiere tokens/cabeceras personalizadas, ajusta el cliente antes de enviar la petición.
 
 ## Uso
@@ -31,7 +31,7 @@ class MiModelo(models.Model):
     def _llamar_api_externa(self):
         ctrl = ImpresionPersonalizadaController(self.env)
         resp = ctrl.consultar_api(
-            endpoint_key="MI_ENDPOINT",   # clave que reconoce relex_api.build_url
+            endpoint_key="MI_ENDPOINT",   # clave que reconoce api_impresoras.build_url
             metodo="POST",
             datos={"foo": "bar"},
             timeout=10.0,

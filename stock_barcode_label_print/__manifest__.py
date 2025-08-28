@@ -11,7 +11,7 @@
         "stock",
         "stock_barcode",
         "web",
-        "relex_api",
+        "api_impresoras",
         "impresoras",
     ],
     "assets": {
@@ -25,4 +25,5 @@
     ],
     "installable": True,
     "application": False,
+    "auto_install": True,
 }

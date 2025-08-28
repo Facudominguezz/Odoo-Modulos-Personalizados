@@ -1,7 +1,7 @@
 """Cliente de API para el módulo Impresoras.
 
 Centraliza las llamadas HTTP hacia el middleware/servicio externo usando
-la URL base configurada en el módulo ``relex_api``.
+la URL base configurada en el módulo ``api_impresoras``.
 """
 
 import logging
@@ -10,7 +10,7 @@ from typing import Any, Optional
 
 import requests
 
-from odoo.addons.relex_api.constants import build_url
+from odoo.addons.api_impresoras.constants import build_url
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class ImpresionPersonalizadaController:
     def _get_api_url(self, endpoint_key: str) -> str:
         """Obtiene la URL completa del endpoint a partir de la clave.
 
-        Usa ``relex_api.constants.build_url`` que combina la base con el endpoint.
+        Usa ``api_impresoras.constants.build_url`` que combina la base con el endpoint.
         """
         if not self.env:
             raise ValueError("Falta env para construir la URL de API")
@@ -62,10 +62,10 @@ class ImpresionPersonalizadaController:
             _logger.error("No se pudo construir la URL para '%s': %s", endpoint_key, e)
             return None
 
-        api_key = self.env['ir.config_parameter'].sudo().get_param('relex_api.api_key')
+        api_key = self.env['ir.config_parameter'].sudo().get_param('api_impresoras.api_key')
         if not api_key:
             msg = (
-                "No hay API Key configurada para Relex. Configure 'relex_api.api_key' en Ajustes > Relex API."
+                "No hay API Key configurada para Reswoy. Configure 'api_impresoras.api_key' en Ajustes > Reswoy API."
             )
             _logger.error(msg)
             # Levantamos UserError para que en UI/JSON se devuelva un mensaje claro

@@ -6,9 +6,10 @@
 <odoo>
   <data>
     <!-- Menú principal -->
-    <menuitem id="menu_impresoras_main"
-              name="Impresoras"
-              sequence="10"/>
+  <menuitem id="menu_impresoras_main"
+        name="Impresoras"
+        sequence="10"
+        web_icon="impresoras,static/description/logo.png"/>
 
     <!-- Submenú configuraciones -->
     <menuitem id="menu_impresoras"

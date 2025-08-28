@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
 import logging
 
@@ -105,8 +105,8 @@ class Impresoras(models.Model):
         """
         # Validación de configuración antes de llamar a la API para poder mostrar un mensaje en la UI
         params = self.env['ir.config_parameter'].sudo()
-        api_base = params.get_param('relex_api.api_base_url')
-        api_key = params.get_param('relex_api.api_key')
+        api_base = params.get_param('api_impresoras.api_base_url')
+        api_key = params.get_param('api_impresoras.api_key')
 
         if not api_base or not api_key:
             faltantes = []
@@ -114,7 +114,7 @@ class Impresoras(models.Model):
                 faltantes.append('API Base URL')
             if not api_key:
                 faltantes.append('API Key')
-            msg = "Falta configurar: " + ", ".join(faltantes) + " (Ajustes > Relex API)"
+            msg = "Falta configurar: " + ", ".join(faltantes) + " (Ajustes > Reswoy API)"
             _logger.warning("Impresoras: %s", msg)
             return [
                 ('', 'Seleccione una impresora...'),
@@ -126,9 +126,9 @@ class Impresoras(models.Model):
             data = controller.consultar_api(endpoint_key='printers', metodo='GET', datos=None) or []
             if not isinstance(data, list):
                 _logger.warning("Respuesta de /printers no es lista: %s", data)
-                return [('','Seleccione una impresora...')]
+                return [('', 'Seleccione una impresora...')]
             opciones = [(imp.get('name') or '', imp.get('name') or '') for imp in data if imp.get('name')]
-            return opciones or [('','Seleccione una impresora...')]
+            return opciones or [('', 'Seleccione una impresora...')]
         except Exception as e:
             _logger.error("Error al consultar /printers: %s", e)
             return [
@@ -142,8 +142,8 @@ class Impresoras(models.Model):
         Refresca la lista: si la configuración está incompleta, muestra notificación; si está OK, recarga la vista.
         """
         params = self.env['ir.config_parameter'].sudo()
-        api_base = params.get_param('relex_api.api_base_url')
-        api_key = params.get_param('relex_api.api_key')
+        api_base = params.get_param('api_impresoras.api_base_url')
+        api_key = params.get_param('api_impresoras.api_key')
 
         if not api_base or not api_key:
             faltantes = []
@@ -163,7 +163,6 @@ class Impresoras(models.Model):
                     'sticky': True,
                 }
             }
-
         _logger.info("Refrescando lista de impresoras (reload de vista)")
         return {'type': 'ir.actions.client', 'tag': 'reload'}
 
