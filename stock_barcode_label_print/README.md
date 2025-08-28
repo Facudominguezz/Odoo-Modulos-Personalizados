@@ -5,7 +5,7 @@ Botón “Imprimir” en la UI de Código de Barras (recepciones/pickings) que a
 ## Compatibilidad y dependencias
 - Odoo 18 (Enterprise) – integra con `stock_barcode` (OWL/JS).
 - Depende de:
-  - `relex_api` (URL base y utilidades `build_url`).
+  - `api_impresoras` (URL base y utilidades `build_url`).
   - `impresoras` (opcional: cliente HTTP genérico para llamadas al middleware; no gestiona impresoras predeterminadas ni tamaños de etiqueta).
 - Python: `requests` (ya declarado por los módulos).
 
@@ -20,7 +20,7 @@ Botón “Imprimir” en la UI de Código de Barras (recepciones/pickings) que a
 
 ## Instalación
 1) Instalar/configurar dependencias:
-- `relex_api` (Ajustes → Integrations → “Impresoras - API Base URL”).
+- `api_impresoras` (Ajustes → Integrations → “Impresoras - API Base URL”).
 - Opcional: `impresoras` (solo si deseas reutilizar su cliente HTTP genérico).
 
 2) Instalar este módulo `stock_barcode_label_print`.
@@ -80,7 +80,7 @@ Respuesta esperada del middleware (ejemplo):
 El controlador reenvía el cuerpo recibido; si falla la llamada devuelve `{ ok: false, message: "..." }` al frontend.
 
 ## Configuración necesaria
-- Ajustes → Integrations → “Impresoras - API Base URL” (módulo `relex_api`).
+- Ajustes → Integrations → “Impresoras - API Base URL” (módulo `api_impresoras`).
 - `impresoras` NO es obligatorio; si lo instalas, úsalo sólo como cliente HTTP. La lógica de impresora predeterminada/dimensiones depende de tu implementación o del middleware.
 
 ## Extensiones sugeridas

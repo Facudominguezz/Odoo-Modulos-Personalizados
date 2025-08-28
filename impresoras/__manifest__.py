@@ -28,7 +28,7 @@
     # Dependencias del módulo
     'depends': [
         'base', # Módulo base de Odoo (siempre requerido)
-        'relex_api',
+        'api_impresoras'
     ],
 
     # Dependencias externas de Python (paquetes que se deben instalar)
@@ -46,8 +46,11 @@
         'views/impresoras_menus.xml',  # Vistas Menu de navegación
     ],
 
+    # Icono de la aplicación mostrado en la lista de Apps (usa el archivo existente)
+    'icon': '/impresoras/static/description/logo.png',
+
     # Configuraciones adicionales
     'installable': True,  # El módulo se puede instalar
     'auto_install': False,  # No se instala automáticamente
-    'application': False,  # No es una aplicación independiente, es un módulo
+    'application': True,  # Mostrar como aplicación en el lanzador (App Switcher)
 }

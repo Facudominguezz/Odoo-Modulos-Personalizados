@@ -1,8 +1,8 @@
 """
-Constantes y utilidades para la API de Relex.
+Constantes y utilidades para la API de Reswoy.
 
 Este módulo contiene funciones auxiliares para la construcción de URLs
-y manejo de endpoints de la API de impresoras Relex.
+y manejo de endpoints de la API de impresoras Reswoy.
 """
 
 from urllib.parse import urljoin
@@ -19,7 +19,7 @@ def get_api_base_url(env):
     Returns:
         str: URL base de la API configurada en el sistema
     """
-    return env['ir.config_parameter'].sudo().get_param('relex_api.api_base_url')
+    return env['ir.config_parameter'].sudo().get_param('api_impresoras.api_base_url')
 
 
 def build_url(env, key):
@@ -49,5 +49,5 @@ def build_url(env, key):
 
     # Construir y retornar la URL completa usando urljoin para manejo seguro de rutas
     if not API_BASE_URL:
-        raise ValueError("La URL base de la API no está configurada (relex_api.api_base_url)")
+        raise ValueError("La URL base de la API no está configurada (api_impresoras.api_base_url)")
     return urljoin(API_BASE_URL.rstrip('/') + '/', ENDPOINTS[key].lstrip('/'))

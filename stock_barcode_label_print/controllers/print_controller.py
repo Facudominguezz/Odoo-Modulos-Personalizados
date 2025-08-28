@@ -15,9 +15,9 @@ try:
 except Exception:  # pragma: no cover
     Cliente = None
 
-# Reuso de utilidades relex_api para URLs
+# Reuso de utilidades api_impresoras para URLs
 try:
-    from odoo.addons.relex_api.constants import build_url  # type: ignore
+    from odoo.addons.api_impresoras.constants import build_url  # type: ignore
 except Exception:  # pragma: no cover
     build_url = None  # type: ignore
 

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 {
     # --- Metadatos básicos ----------------------------------------------------
-    "name": "Relex API Configuration",
-    "summary": "Configuración centralizada para APIs de Relex",
+    "name": "API Impresoras – Configuración",
+    "summary": "Configuración centralizada para APIs de Reswoy",
     "description": """
 Módulo para gestionar configuraciones centralizadas de APIs.
 
@@ -11,9 +11,9 @@ Características:
 * Gestión centralizada de endpoints
 * Configuraciones por empresa
 """,
-    "author": "Relex",
-    "website": "https://www.relex.com",
-    "maintainer": "Relex",
+    "author": "Reswoy",
+    "website": "https://www.reswoy.com/es",
+    "maintainer": "Reswoy",
 
     # --- Información Odoo ----------------------------------------------------
     "version": "18.0.1.0.0",          # <major>.<odoo_ver>.<patch>
